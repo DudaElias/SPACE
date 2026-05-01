@@ -30,10 +30,13 @@ class ControlButton extends PositionComponent with TapCallbacks {
   CircleComponent? _outerRing;
   CircleComponent? _innerCircle;
   CircleComponent? _glowRing;
+  CircleComponent? _glowRingOuter;
+  CircleComponent? _shineCircle;
   RectangleComponent? _leverBase;
   RectangleComponent? _leverStem;
   CircleComponent? _leverHead;
   CircleComponent? _leverPivot;
+  double _glowPulse = 0;
 
   static const double _controlSize = 160;
   static const double _circleHitRadius = 80;
@@ -107,25 +110,38 @@ class ControlButton extends PositionComponent with TapCallbacks {
       addAll([_leverBase!, _leverStem!, _leverPivot!, _leverHead!]);
       _syncLeverPose(center);
     } else {
-      _glowRing = CircleComponent(
-        radius: 80,
+      // Outer glow - largest and most diffuse
+      _glowRingOuter = CircleComponent(
+        radius: 92,
         paint: Paint()
-          ..color = gradientColors[0].withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+          ..color = gradientColors[0].withValues(alpha: 0.2)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16),
         anchor: Anchor.center,
         position: center,
       );
 
+      // Main glow ring
+      _glowRing = CircleComponent(
+        radius: 80,
+        paint: Paint()
+          ..color = gradientColors[0].withValues(alpha: 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+        anchor: Anchor.center,
+        position: center,
+      );
+
+      // Outer ring (border)
       _outerRing = CircleComponent(
         radius: 70,
         paint: Paint()
           ..color = gradientColors[0]
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 3,
+          ..strokeWidth = 4,
         anchor: Anchor.center,
         position: center,
       );
 
+      // Inner circle (dark fill)
       _innerCircle = CircleComponent(
         radius: 50,
         paint: Paint()..color = const Color(0xFF111827),
@@ -133,7 +149,17 @@ class ControlButton extends PositionComponent with TapCallbacks {
         position: center,
       );
 
-      addAll([_glowRing!, _outerRing!, _innerCircle!]);
+      // Shine effect on top
+      _shineCircle = CircleComponent(
+        radius: 35,
+        paint: Paint()
+          ..color = Colors.white.withValues(alpha: 0.1)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        anchor: Anchor.center,
+        position: center + Vector2(-15, -20),
+      );
+
+      addAll([_glowRingOuter!, _glowRing!, _outerRing!, _innerCircle!, _shineCircle!]);
     }
   }
 
@@ -163,6 +189,16 @@ class ControlButton extends PositionComponent with TapCallbacks {
       final double response = 1 - math.exp(-dt * 12);
       _leverProgress += (targetProgress - _leverProgress) * response;
       _syncLeverPose(center);
+    } else {
+      // Gentle glow pulse animation for buttons
+      _glowPulse += dt * 2.5; // Controls speed of pulse
+      final double pulseIntensity = (math.sin(_glowPulse) + 1) / 2; // 0 to 1
+      
+      if (_glowRingOuter != null) {
+        _glowRingOuter!.paint.color = gradientColors[0].withValues(
+          alpha: 0.15 + pulseIntensity * 0.2,
+        );
+      }
     }
   }
 
@@ -177,11 +213,29 @@ class ControlButton extends PositionComponent with TapCallbacks {
 
     if (!isLever) {
       if (_outerRing != null) {
-        _outerRing!.paint.color = highlighted ? gradientColors[1] : gradientColors[0];
+        _outerRing!.paint
+          ..color = highlighted ? gradientColors[1] : gradientColors[0]
+          ..strokeWidth = highlighted ? 5 : 4;
       }
       if (_glowRing != null) {
-        _glowRing!.paint.color =
-            highlighted ? gradientColors[1].withValues(alpha: 0.8) : gradientColors[0].withValues(alpha: 0.4);
+        _glowRing!.paint.color = highlighted
+            ? gradientColors[1].withValues(alpha: 0.9)
+            : gradientColors[0].withValues(alpha: 0.5);
+      }
+      if (_glowRingOuter != null) {
+        _glowRingOuter!.paint.color = highlighted
+            ? gradientColors[1].withValues(alpha: 0.5)
+            : gradientColors[0].withValues(alpha: 0.2);
+      }
+      if (_shineCircle != null) {
+        _shineCircle!.paint.color = highlighted
+            ? Colors.white.withValues(alpha: 0.25)
+            : Colors.white.withValues(alpha: 0.1);
+      }
+      if (_innerCircle != null) {
+        _innerCircle!.paint.color = highlighted
+            ? const Color(0xFF1F2937)
+            : const Color(0xFF111827);
       }
     } else {
       if (_leverHead != null) {
@@ -191,12 +245,12 @@ class ControlButton extends PositionComponent with TapCallbacks {
       }
       if (_leverStem != null) {
         _leverStem!.paint.color = highlighted
-            ? const Color(0xFFCBD5E1)
+            ? const Color(0xFFE2E8F0)
             : const Color(0xFF94A3B8);
       }
       if (_leverPivot != null) {
         _leverPivot!.paint.color = highlighted
-            ? const Color(0xFF64748B)
+            ? const Color(0xFF94A3B8)
             : const Color(0xFF334155);
       }
     }
