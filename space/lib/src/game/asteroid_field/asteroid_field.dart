@@ -1,14 +1,15 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:space/src/game/components/back_button.dart'
+    show SimpleBackButton;
 import 'package:space/src/game/game.dart';
-import 'components/back_button.dart';
 
-class StoryMode extends Component with HasGameReference<SpaceGame> {
+class AsteroidField extends Component with HasGameReference<SpaceGame> {
   @override
   Future<void> onLoad() async {
     addAll([
       TextComponent(
-          text: 'Modo História',
+          text: 'Campo de asteróides',
           textRenderer: TextPaint(
             style: const TextStyle(
               fontSize: 24,

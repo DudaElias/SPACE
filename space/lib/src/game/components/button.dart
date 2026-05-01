@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class RoundedButton extends PositionComponent with TapCallbacks {
   RoundedButton({
@@ -10,9 +11,10 @@ class RoundedButton extends PositionComponent with TapCallbacks {
     super.position,
     super.anchor = Anchor.center,
   }) : _textDrawable = TextPaint(
-         style: const TextStyle(
+         style: TextStyle(
            fontSize: 18,
-           color: Color(0xFFFFFFFF),
+           fontFamily: GoogleFonts.silkscreen().fontFamily,
+           color: const Color(0xFFFFFFFF),
            fontWeight: FontWeight.w800,
          ),
        ).toTextPainter(text) {
