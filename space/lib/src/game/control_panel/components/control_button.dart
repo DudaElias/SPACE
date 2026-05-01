@@ -25,13 +25,12 @@ class ControlButton extends PositionComponent with TapCallbacks {
 
   bool _highlighted = false;
   double _scale = 1.0;
-  double _leverOffset = 0.0;
+  double _leverProgress = 0.0;
 
   CircleComponent? _outerRing;
   CircleComponent? _innerCircle;
   CircleComponent? _glowRing;
   RectangleComponent? _leverBase;
-  RectangleComponent? _leverSlot;
   RectangleComponent? _leverStem;
   CircleComponent? _leverHead;
   CircleComponent? _leverPivot;
@@ -40,7 +39,35 @@ class ControlButton extends PositionComponent with TapCallbacks {
   static const double _circleHitRadius = 80;
   static const double _leverHitWidth = 80;
   static const double _leverHitHeight = 160;
-  static const double _leverRestOffset = -44;
+  static const double _leverPivotYOffset = 20;
+  static const double _leverStemLength = 74;
+  static const double _leverHeadOffset = 58;
+  static const double _leverRestAngle = -0.22;
+  static const double _leverPressedAngle = 0.48;
+
+  Vector2 _leverPivotPosition(Vector2 center) {
+    return center + Vector2(0, _leverPivotYOffset);
+  }
+
+  double _leverEase(double progress) {
+    return progress * progress * (3 - 2 * progress);
+  }
+
+  void _syncLeverPose(Vector2 center) {
+    final Vector2 pivot = _leverPivotPosition(center);
+    final double eased = _leverEase(_leverProgress);
+    final double angle = _leverRestAngle + (_leverPressedAngle - _leverRestAngle) * eased;
+
+    _leverStem
+      ?..position = pivot
+      ..angle = angle;
+    _leverPivot?.position = pivot;
+    _leverHead?.position = pivot + Vector2(
+      math.sin(angle) * _leverHeadOffset,
+      -math.cos(angle) * _leverHeadOffset,
+    );
+    _leverHead?.scale = Vector2.all(1.0 + eased * 0.08);
+  }
 
   @override
   Future<void> onLoad() async {
@@ -50,46 +77,40 @@ class ControlButton extends PositionComponent with TapCallbacks {
 
     if (isLever) {
       _leverBase = RectangleComponent(
-        size: Vector2(88, 28),
+        size: Vector2(90, 28),
         paint: Paint()..color = const Color(0xFF1F2937),
         anchor: Anchor.bottomCenter,
         position: center + Vector2(0, 48),
       );
 
-      _leverSlot = RectangleComponent(
-        size: Vector2(18, 94),
-        paint: Paint()..color = const Color(0xFF020617),
-        anchor: Anchor.bottomCenter,
-        position: center + Vector2(0, 20),
-      );
-
       _leverStem = RectangleComponent(
-        size: Vector2(10, 74),
+        size: Vector2(10, _leverStemLength),
         paint: Paint()..color = const Color(0xFF94A3B8),
         anchor: Anchor.bottomCenter,
-        position: center + Vector2(0, 20),
+        position: center + Vector2(0, _leverPivotYOffset),
       );
 
       _leverPivot = CircleComponent(
         radius: 12,
         paint: Paint()..color = const Color(0xFF334155),
         anchor: Anchor.center,
-        position: center + Vector2(0, 20),
+        position: center + Vector2(0, _leverPivotYOffset),
       );
 
       _leverHead = CircleComponent(
         radius: 18,
-        paint: Paint()..color = leverColor.withOpacity(0.9),
+        paint: Paint()..color = leverColor.withValues(alpha: 0.9),
         anchor: Anchor.center,
-        position: center + Vector2(0, _leverRestOffset),
+        position: center + Vector2(0, _leverPivotYOffset - _leverHeadOffset),
       );
 
-      addAll([_leverBase!, _leverSlot!, _leverStem!, _leverPivot!, _leverHead!]);
+      addAll([_leverBase!, _leverStem!, _leverPivot!, _leverHead!]);
+      _syncLeverPose(center);
     } else {
       _glowRing = CircleComponent(
         radius: 80,
         paint: Paint()
-          ..color = gradientColors[0].withOpacity(0.4)
+          ..color = gradientColors[0].withValues(alpha: 0.4)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
         anchor: Anchor.center,
         position: center,
@@ -117,17 +138,17 @@ class ControlButton extends PositionComponent with TapCallbacks {
   }
 
   @override
-  bool containsLocalPoint(Vector2 localPosition) {
+  bool containsLocalPoint(Vector2 point) {
     final double centerX = size.x / 2;
     final double centerY = size.y / 2;
 
     if (isLever) {
-      return (localPosition.x - centerX).abs() <= _leverHitWidth / 2 &&
-          (localPosition.y - centerY).abs() <= _leverHitHeight / 2;
+      return (point.x - centerX).abs() <= _leverHitWidth / 2 &&
+          (point.y - centerY).abs() <= _leverHitHeight / 2;
     }
 
-    final double dx = localPosition.x - centerX;
-    final double dy = localPosition.y - centerY;
+    final double dx = point.x - centerX;
+    final double dy = point.y - centerY;
     return dx * dx + dy * dy <= _circleHitRadius * _circleHitRadius;
   }
 
@@ -137,18 +158,11 @@ class ControlButton extends PositionComponent with TapCallbacks {
 
     final Vector2 center = size / 2;
 
-    if (isLever && _highlighted) {
-      _leverOffset = math.max(_leverOffset - dt * 120, -24);
-      _leverHead?.position = center + Vector2(0, _leverRestOffset + _leverOffset);
-      _leverStem?.position = center + Vector2(0, 20 + _leverOffset * 0.25);
-    } else if (isLever && _leverOffset < 0) {
-      _leverOffset = math.min(_leverOffset + dt * 120, 0);
-      _leverHead?.position = center + Vector2(0, _leverRestOffset + _leverOffset);
-      _leverStem?.position = center + Vector2(0, 20 + _leverOffset * 0.25);
-    }
-
     if (isLever) {
-      _leverStem?.angle = 0;
+      final double targetProgress = _highlighted ? 1.0 : 0.0;
+      final double response = 1 - math.exp(-dt * 12);
+      _leverProgress += (targetProgress - _leverProgress) * response;
+      _syncLeverPose(center);
     }
   }
 
@@ -167,13 +181,18 @@ class ControlButton extends PositionComponent with TapCallbacks {
       }
       if (_glowRing != null) {
         _glowRing!.paint.color =
-            highlighted ? gradientColors[1].withOpacity(0.8) : gradientColors[0].withOpacity(0.4);
+            highlighted ? gradientColors[1].withValues(alpha: 0.8) : gradientColors[0].withValues(alpha: 0.4);
       }
     } else {
       if (_leverHead != null) {
         _leverHead!.paint.color = highlighted
-            ? leverColor.withOpacity(1.0)
-            : leverColor.withOpacity(0.8);
+            ? leverColor.withValues(alpha: 1.0)
+            : leverColor.withValues(alpha: 0.8);
+      }
+      if (_leverStem != null) {
+        _leverStem!.paint.color = highlighted
+            ? const Color(0xFFCBD5E1)
+            : const Color(0xFF94A3B8);
       }
       if (_leverPivot != null) {
         _leverPivot!.paint.color = highlighted
