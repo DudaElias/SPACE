@@ -35,15 +35,22 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
         position: Vector2(game.size.x / 2, 50),
       ),
     );
-    for (int col = 0; col < 3; col++) {
+    final minigames = <({String title, String routeName})>[
+      (title: 'Painel de Controle', routeName: 'minigame-1'),
+      (title: 'Campo de Asteróides', routeName: 'minigame-2'),
+      (title: 'Campo de Asteróides', routeName: 'minigame-3'),
+    ];
+
+    for (int col = 0; col < minigames.length; col++) {
       final position = Vector2(startX + col * (cardSize.x + spacing.x), startY);
+      final minigame = minigames[col];
 
       add(
         GameCard(
           imageAssetPath: 'game_1.png', // Placeholder image for all minigames
-          title: 'Campo de Asteróides',
+          title: minigame.title,
           position: position,
-          onTap: () => game.router.pushNamed('minigame-${col + 1}'),
+          onTap: () => game.router.pushNamed(minigame.routeName),
         ),
       );
     }
