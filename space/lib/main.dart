@@ -6,7 +6,7 @@ void main() {
   runApp(
     GameWidget(
       game: SpaceGame(),
-      backgroundBuilder: (context) => Container(color: Color(0xff161E54)),
+      backgroundBuilder: (context) => Container(color: Color.fromARGB(255, 93, 101, 152)),
     )
  );
 }

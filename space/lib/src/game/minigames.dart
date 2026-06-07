@@ -9,6 +9,7 @@ import 'package:space/src/game/game.dart';
 class MinigameSelector extends Component with HasGameReference<SpaceGame> {
   @override
   Future<void> onLoad() async {
+    final minigame_names = ['Painel de Controle', 'Campo de Asteróides', 'Conserto Espacial'];
     final cardSize = GameCard.defaultCardSize;
     final spacing = Vector2(20, 20); // space between cards
     final columns = 3;
@@ -40,8 +41,8 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
 
       add(
         GameCard(
-          imageAssetPath: 'game_1.png', // Placeholder image for all minigames
-          title: 'Campo de Asteróides',
+          imageAssetPath: 'game_${col + 1}.png', // Placeholder image for all minigames
+          title: minigame_names[col],
           position: position,
           onTap: () => game.router.pushNamed('minigame-${col + 1}'),
         ),

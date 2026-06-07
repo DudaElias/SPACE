@@ -12,13 +12,13 @@ class RoundedButton extends PositionComponent with TapCallbacks {
     super.anchor = Anchor.center,
   }) : _textDrawable = TextPaint(
          style: TextStyle(
-           fontSize: 18,
+           fontSize: 20,
            fontFamily: GoogleFonts.silkscreen().fontFamily,
            color: const Color(0xFFFFFFFF),
            fontWeight: FontWeight.w800,
          ),
        ).toTextPainter(text) {
-    size = Vector2(200, 40);
+    size = Vector2(250, 50);
     _textOffset = Offset(
       (size.x - _textDrawable.width) / 2,
       (size.y - _textDrawable.height) / 2,

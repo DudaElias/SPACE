@@ -18,7 +18,7 @@ class SimpleBackButton extends PositionComponent with HasGameReference<SpaceGame
     ..color = Colors.transparent;
   final Paint _iconPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..color = const Color(0xffaaaaaa)
+    ..color = const Color.fromARGB(255, 207, 207, 207)
     ..strokeWidth = 7;
   final Path _iconPath;
 
@@ -42,12 +42,12 @@ class SimpleBackButton extends PositionComponent with HasGameReference<SpaceGame
 
   @override
   void onTapUp(TapUpEvent event) {
-    _iconPaint.color = const Color(0xffaaaaaa);
+    _iconPaint.color = const Color.fromARGB(255, 207, 207, 207);
     action();
   }
 
   @override
   void onTapCancel(TapCancelEvent event) {
-    _iconPaint.color = const Color(0xffaaaaaa);
+    _iconPaint.color = const Color.fromARGB(255, 207, 207, 207);
   }
 }
