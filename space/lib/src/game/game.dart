@@ -1,5 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:space/src/game/asteroid_field/asteroid_field.dart';
+import 'package:space/src/game/broken_ship/broken_ship_route.dart';
 import 'package:space/src/game/control_panel/control_panel_route.dart';
 import 'package:space/src/game/menu.dart';
 import 'package:space/src/game/minigames.dart';
@@ -21,7 +22,7 @@ class SpaceGame extends FlameGame {
           'minigame-selector': Route(MinigameSelector.new),
           'minigame-1': Route(ControlPanelRoute.new),
           'minigame-2': Route(AsteroidField.new),
-          'minigame-3': Route(AsteroidField.new),
+          'minigame-3': Route(BrokenShipRoute.new),
         },
         initialRoute: 'home',
       ),

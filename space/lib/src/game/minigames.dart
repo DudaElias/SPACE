@@ -38,7 +38,7 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
     final minigames = <({String title, String routeName})>[
       (title: 'Painel de Controle', routeName: 'minigame-1'),
       (title: 'Campo de Asteróides', routeName: 'minigame-2'),
-      (title: 'Campo de Asteróides', routeName: 'minigame-3'),
+      (title: 'Conserte a Nave', routeName: 'minigame-3'),
     ];
 
     for (int col = 0; col < minigames.length; col++) {
