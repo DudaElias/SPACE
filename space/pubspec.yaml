@@ -24,6 +24,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/images/broken_ship_pieces/
 
 
 flutter_launcher_icons:
