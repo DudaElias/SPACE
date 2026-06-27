@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:space/src/game/components/button.dart';
+import 'package:space/src/game/shared/atoms/button.dart';
 import 'package:space/src/game/game.dart';
 
 class Menu extends Component with HasGameReference<SpaceGame> {

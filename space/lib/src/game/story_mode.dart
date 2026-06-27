@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:space/src/game/game.dart';
-import 'components/back_button.dart';
+import 'shared/atoms/back_button.dart';
 
 class StoryMode extends Component with HasGameReference<SpaceGame> {
   @override

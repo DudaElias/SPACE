@@ -1,15 +1,14 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:space/src/game/components/back_button.dart'
+import 'package:space/src/game/shared/atoms/back_button.dart'
     show SimpleBackButton;
-import 'package:space/src/game/components/game_card.dart';
+import 'package:space/src/game/shared/atoms/game_card.dart';
 import 'package:space/src/game/game.dart';
 
 class MinigameSelector extends Component with HasGameReference<SpaceGame> {
   @override
   Future<void> onLoad() async {
-    final minigame_names = ['Painel de Controle', 'Campo de Asteróides', 'Conserto Espacial'];
     final cardSize = GameCard.defaultCardSize;
     final spacing = Vector2(20, 20); // space between cards
     final columns = 3;
@@ -36,15 +35,22 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
         position: Vector2(game.size.x / 2, 50),
       ),
     );
-    for (int col = 0; col < 3; col++) {
+    final minigames = <({String title, String routeName})>[
+      (title: 'Painel de Controle', routeName: 'minigame-1'),
+      (title: 'Campo de Asteróides', routeName: 'minigame-2'),
+      (title: 'Conserto Espacial', routeName: 'minigame-3'),
+    ];
+
+    for (int col = 0; col < minigames.length; col++) {
       final position = Vector2(startX + col * (cardSize.x + spacing.x), startY);
+      final minigame = minigames[col];
 
       add(
         GameCard(
           imageAssetPath: 'game_${col + 1}.png', // Placeholder image for all minigames
-          title: minigame_names[col],
+          title: minigame.title,
           position: position,
-          onTap: () => game.router.pushNamed('minigame-${col + 1}'),
+          onTap: () => game.router.pushNamed(minigame.routeName),
         ),
       );
     }
