@@ -14,6 +14,18 @@ class SpaceGame extends FlameGame {
     // Preload images before starting the game
     await images.load('logo.png');
 
+    final savedPrefix = images.prefix;
+    images.prefix = '';
+    const pieceNames = [
+      'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',
+      'battery-blue', 'battery-blue-broken', 'battery-orange', 'battery-orange-broken',
+      'gear', 'gear-broken', 'battery', 'battery-broken',
+    ];
+    for (final name in pieceNames) {
+      await images.load('assets/images/broken_ship_pieces/$name.png');
+    }
+    images.prefix = savedPrefix;
+
     add(
       router = RouterComponent(
         routes: {
