@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
-import 'package:space/src/game/components/button.dart';
+import 'package:space/src/game/shared/atoms/button.dart';
 import 'package:space/src/game/game.dart';
 
 class Menu extends Component with HasGameReference<SpaceGame> {
@@ -15,13 +15,13 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     super.onMount();
     try {
       // Check if image is loaded
-      final logoImage = game.images.fromCache('white_logo.png');
+      final logoImage = game.images.fromCache('logo.png');
 
       // Add components to scene
       addAll( [
               _logo = SpriteComponent(
         sprite: Sprite(logoImage),
-        size: Vector2(250, 250),
+        size: Vector2(450, 450),
         anchor: Anchor.center
       ),
       _button1 = RoundedButton(
@@ -46,8 +46,8 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     super.onGameResize(size);
     if (isMounted) {
       _logo.position = Vector2(size.x / 2, size.y / 3);
-      _button1.position = Vector2(size.x / 2, _logo.y + 140);
-      _button2.position = Vector2(size.x / 2, _logo.y + 200);
+      _button1.position = Vector2(size.x / 2, _logo.y + 200);
+      _button2.position = Vector2(size.x / 2, _logo.y + 280);
     }
   }
 }

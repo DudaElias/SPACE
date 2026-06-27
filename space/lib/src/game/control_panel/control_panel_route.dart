@@ -1,11 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 
-import 'package:space/src/game/components/back_button.dart';
+import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/control_panel/control_panel_world.dart';
 import 'package:space/src/game/game.dart';
 
+enum ControlPanelMode { standalone, miniGame }
+
 class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
+  static const ControlPanelMode standalone = ControlPanelMode.standalone;
+  static const ControlPanelMode miniGame = ControlPanelMode.miniGame;
+
+  ControlPanelRoute({
+    this.mode = ControlPanelMode.standalone,
+    this.onMiniGameFinishExit,
+  });
+
+  final ControlPanelMode mode;
+  final VoidCallback? onMiniGameFinishExit;
+
   late final ControlPanelWorld _world;
   late final CameraComponent _camera;
 
@@ -13,7 +27,10 @@ class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    _world = ControlPanelWorld();
+    _world = ControlPanelWorld(
+      mode: mode,
+      onMiniGameFinishExit: onMiniGameFinishExit,
+    );
     // Add the world as a child so it participates in the lifecycle and layout
     await add(_world);
 

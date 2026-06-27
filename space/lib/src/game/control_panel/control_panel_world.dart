@@ -6,10 +6,15 @@ import 'package:flutter/material.dart';
 import 'components/control_button.dart';
 import 'components/control_panel_backdrop.dart';
 import 'control_panel_controller.dart';
-import 'components/control_panel_dialog_overlay.dart';
+import '../shared/molecules/game_modal.dart';
+import 'control_panel_route.dart';
 
 class ControlPanelWorld extends World {
-  ControlPanelWorld({ControlPanelController? controller})
+  ControlPanelWorld({
+    ControlPanelController? controller,
+    this.mode = ControlPanelMode.standalone,
+    this.onMiniGameFinishExit,
+  })
     : _controller = controller ?? ControlPanelController();
 
   static const String _statusIntro =
@@ -31,6 +36,8 @@ class ControlPanelWorld extends World {
     'Falha no painel! Toque em qualquer comando para reiniciar.';
 
   final ControlPanelController _controller;
+  final ControlPanelMode mode;
+  final VoidCallback? onMiniGameFinishExit;
 
   late final TextComponent _titleText;
   late final TextComponent _levelText;
@@ -50,7 +57,7 @@ class ControlPanelWorld extends World {
   bool _awaitingNextRound = false;
   bool _awaitingStart = true;
   bool _victoryDialogOpen = false;
-  GameDialogOverlay? _activeDialog;
+  GameModal? _activeDialog;
   final List<double> _inputFlashRemaining = List<double>.filled(4, 0);
   final List<double> _buttonScale = List<double>.filled(4, 1.0);
 
@@ -174,6 +181,11 @@ class ControlPanelWorld extends World {
   }
 
   void _closeVictoryDialog() {
+    if (mode == ControlPanelMode.miniGame && onMiniGameFinishExit != null) {
+      onMiniGameFinishExit!.call();
+      return;
+    }
+
     _victoryDialogOpen = false;
     _activeDialog?.removeFromParent();
     _activeDialog = null;
@@ -453,31 +465,32 @@ class ControlPanelWorld extends World {
     }
   }
 
-  void _showIntroDialog() {
+  void _showDialog(GameModal dialog) {
     _activeDialog?.removeFromParent();
-    final dialog = GameDialogOverlay(
-      title: 'Sistema S.P.A.C.E.',
-      message:
-          'Memorize e repita a sequência de comandos do painel para ligar o foguete e salvar seu melhor amigo humano.',
-      buttonText: 'Iniciar',
-      onPressed: _startFromIntroDialog,
-    );
     _activeDialog = dialog;
     add(dialog);
     dialog.layoutForSize(findGame()!.size);
   }
 
+  void _showIntroDialog() {
+    _showDialog(GameModal(
+      title: 'Sistema S.P.A.C.E.',
+      message:
+          'Memorize e repita a sequência de comandos do painel para ligar o foguete e salvar seu melhor amigo humano.',
+      buttonText: 'Iniciar',
+      onPressed: _startFromIntroDialog,
+    ));
+  }
+
   void _showVictoryDialog() {
-    _activeDialog?.removeFromParent();
-    final dialog = GameDialogOverlay(
+    _showDialog(GameModal(
       title: 'Missão Cumprida!',
       message:
           'Painel de controle ativado com sucesso. O foguete está pronto para decolar.',
-      buttonText: 'Continuar',
+      buttonText: mode == ControlPanelMode.miniGame
+          ? 'Voltar aos Minigames'
+          : 'Continuar',
       onPressed: _closeVictoryDialog,
-    );
-    _activeDialog = dialog;
-    add(dialog);
-    dialog.layoutForSize(findGame()!.size);
+    ));
   }
 }

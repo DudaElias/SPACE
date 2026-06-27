@@ -1,11 +1,25 @@
+import 'package:flutter/foundation.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
-import 'package:space/src/game/broken_ship/broken_ship_world.dart';
 
-import 'package:space/src/game/components/back_button.dart';
+import 'package:space/src/game/shared/atoms/back_button.dart';
+import 'package:space/src/game/broken_ship/broken_ship_world.dart';
 import 'package:space/src/game/game.dart';
 
+enum BrokenShipMode { standalone, miniGame }
+
 class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
+  static const BrokenShipMode standalone = BrokenShipMode.standalone;
+  static const BrokenShipMode miniGame = BrokenShipMode.miniGame;
+
+  BrokenShipRoute({
+    this.mode = BrokenShipMode.standalone,
+    this.onMiniGameFinishExit,
+  });
+
+  final BrokenShipMode mode;
+  final VoidCallback? onMiniGameFinishExit;
+
   late final BrokenShipWorld _world;
   late final CameraComponent _camera;
 
@@ -13,7 +27,10 @@ class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
   Future<void> onLoad() async {
     await super.onLoad();
 
-    _world = BrokenShipWorld();
+    _world = BrokenShipWorld(
+      mode: mode,
+      onMiniGameFinishExit: onMiniGameFinishExit,
+    );
     // Add the world as a child so it participates in the lifecycle and layout
     await add(_world);
 

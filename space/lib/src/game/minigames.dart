@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:space/src/game/components/back_button.dart'
+import 'package:space/src/game/shared/atoms/back_button.dart'
     show SimpleBackButton;
-import 'package:space/src/game/components/game_card.dart';
+import 'package:space/src/game/shared/atoms/game_card.dart';
 import 'package:space/src/game/game.dart';
 
 class MinigameSelector extends Component with HasGameReference<SpaceGame> {
@@ -38,7 +38,7 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
     final minigames = <({String title, String routeName})>[
       (title: 'Painel de Controle', routeName: 'minigame-1'),
       (title: 'Campo de Asteróides', routeName: 'minigame-2'),
-      (title: 'Conserte a Nave', routeName: 'minigame-3'),
+      (title: 'Conserto Espacial', routeName: 'minigame-3'),
     ];
 
     for (int col = 0; col < minigames.length; col++) {
@@ -47,7 +47,7 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
 
       add(
         GameCard(
-          imageAssetPath: 'game_1.png', // Placeholder image for all minigames
+          imageAssetPath: 'game_${col + 1}.png', // Placeholder image for all minigames
           title: minigame.title,
           position: position,
           onTap: () => game.router.pushNamed(minigame.routeName),

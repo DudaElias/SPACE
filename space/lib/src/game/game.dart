@@ -12,7 +12,7 @@ class SpaceGame extends FlameGame {
   @override
   Future<void> onLoad() async {
     // Preload images before starting the game
-    await images.load('white_logo.png');
+    await images.load('logo.png');
 
     add(
       router = RouterComponent(
@@ -20,9 +20,27 @@ class SpaceGame extends FlameGame {
           'home': Route(Menu.new),
           'story-mode': Route(StoryMode.new),
           'minigame-selector': Route(MinigameSelector.new),
-          'minigame-1': Route(ControlPanelRoute.new),
-          'minigame-2': Route(AsteroidField.new),
-          'minigame-3': Route(BrokenShipRoute.new),
+          'minigame-1': Route(
+            () => ControlPanelRoute(
+              mode: ControlPanelRoute.miniGame,
+              onMiniGameFinishExit: router.pop,
+            ),
+            maintainState: false,
+          ),
+          'minigame-2': Route(
+            () => AsteroidField(
+              mode: AsteroidFieldMode.miniGame,
+              onMiniGameFinishExit: router.pop,
+            ),
+            maintainState: false,
+          ),
+          'minigame-3': Route(
+            () => BrokenShipRoute(
+              mode: BrokenShipRoute.miniGame,
+              onMiniGameFinishExit: router.pop,
+            ),
+            maintainState: false,
+          )
         },
         initialRoute: 'home',
       ),
