@@ -4,19 +4,19 @@ import 'package:flutter/material.dart';
 
 import '../asteroid_field.dart';
 import 'asteroid.dart';
-import 'coin.dart';
+import 'petisco.dart';
 import 'fake_explosion.dart';
 
 class RocketPlayer extends PositionComponent
   with HasGameReference<AsteroidField>, CollisionCallbacks {
   RocketPlayer({
     required this.onAsteroidHit,
-    required this.onCoinCollected,
+    required this.onPetiscoCollected,
     required this.onExplosionHit,
   });
 
   final VoidCallback onAsteroidHit;
-  final ValueChanged<Coin> onCoinCollected;
+  final ValueChanged<Petisco> onPetiscoCollected;
   final VoidCallback onExplosionHit;
 
   Vector2 targetPosition = Vector2.zero();
@@ -86,8 +86,8 @@ class RocketPlayer extends PositionComponent
 
     if (other is Asteroid) {
       onAsteroidHit();
-    } else if (other is Coin) {
-      onCoinCollected(other);
+    } else if (other is Petisco) {
+      onPetiscoCollected(other);
     } else if (other is FakeExplosion) {
       onExplosionHit();
     }

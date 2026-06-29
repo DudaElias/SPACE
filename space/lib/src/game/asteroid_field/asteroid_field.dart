@@ -4,12 +4,14 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/molecules/game_modal.dart';
+import 'package:space/src/game/shared/settings.dart';
 import 'components/asteroid_field_components.dart';
 
 enum AsteroidFieldPhase { waiting, playing, gameOver }
-enum AsteroidFieldMode { standalone, miniGame }
+enum AsteroidFieldMode { standalone, miniGame, story }
 
 class AsteroidField extends FlameGame
     with HasGameReference, HasCollisionDetection, DragCallbacks, TapCallbacks {
@@ -18,7 +20,7 @@ class AsteroidField extends FlameGame
 
   late RocketPlayer player;
   late TextComponent statusText;
-  late TextComponent coinText;
+  late TextComponent petiscoText;
   late GameModal introModal;
   late GameModal finishModal;
   late GameModal lossModal;
@@ -28,15 +30,14 @@ class AsteroidField extends FlameGame
 
   double asteroidSpawnTimer = 0;
   double explosionSpawnTimer = 0;
-  double coinSpawnTimer = 0;
+  double petiscoSpawnTimer = 0;
 
-  double asteroidSpawnRate = 1.0;
-  double explosionSpawnRate = 2.2;
-  double coinSpawnRate = 1.6;
+  double get gameSpeed => 260 * GameSettings.instance.speedMultiplier;
+  double get asteroidSpawnRate => 1.0 * GameSettings.instance.spawnRateMultiplier;
+  double get explosionSpawnRate => 2.2 * GameSettings.instance.spawnRateMultiplier;
+  double get petiscoSpawnRate => 1.6 * GameSettings.instance.spawnRateMultiplier;
 
-  int coinsCollected = 0;
-
-  double gameSpeed = 260;
+  int petiscosCollected = 0;
   AsteroidFieldPhase phase = AsteroidFieldPhase.waiting;
   double distanceTravelled = 0.0;
   double finishDistance = 5000.0;
@@ -53,7 +54,7 @@ class AsteroidField extends FlameGame
   Future<void> onLoad() async {
     player = RocketPlayer(
       onAsteroidHit: triggerGameOver,
-      onCoinCollected: collectCoin,
+      onPetiscoCollected: collectPetisco,
       onExplosionHit: triggerGameOver,
     );
 
@@ -61,9 +62,10 @@ class AsteroidField extends FlameGame
     add(player);
 
     statusText = TextComponent(
-      text: 'Tap to start',
+      text: 'Clique para começar',
       textRenderer: TextPaint(
-        style: const TextStyle(
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
           color: Colors.white,
           fontSize: 28,
           fontWeight: FontWeight.w700,
@@ -74,18 +76,19 @@ class AsteroidField extends FlameGame
 
     add(statusText);
 
-    coinText = TextComponent(
-      text: 'Coins: 0',
+    petiscoText = TextComponent(
+      text: 'Petiscos: 0',
       textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0xFFFFE59A),
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFFFE59A),
           fontSize: 18,
           fontWeight: FontWeight.w700,
         ),
       ),
       anchor: Anchor.topRight,
     );
-    add(coinText);
+    add(petiscoText);
 
     progressBg = RectangleComponent(
       size: Vector2(240, 18),
@@ -112,10 +115,10 @@ class AsteroidField extends FlameGame
     progressBg.add(progressShip);
 
     introModal = GameModal(
-      title: 'Mission Briefing',
+      title: 'Sua missão:',
       message:
-          'Guide the rocket through the asteroid belt. Drag to steer, avoid asteroids and explosions, collect coins, and reach the finish line.',
-      buttonText: 'Start Mission',
+          'Guie o foguete através do campo de asteróides. Arraste para pilotar, evite os asteróides e as explosões, colete os petiscos, e alcance a linha de chegada.',
+      buttonText: 'Comece a missão',
       onPressed: _startFromIntroModal,
     );
     introModal.priority = 100;
@@ -124,9 +127,9 @@ class AsteroidField extends FlameGame
     finishModal = GameModal(
       onPressed: onFinishContinue,
       style: GameModalStyle.success,
-      title: 'Mission Complete',
-      message: 'Great flight!',
-      buttonText: 'Continue',
+      title: 'Missão Concluída',
+      message: 'Ótimo voo!',
+      buttonText: 'Continuar',
       titleColor: const Color(0xFFE8F4FF),
       messageColor: const Color(0xFFB8CEE8),
       panelSize: Vector2(480, 260),
@@ -136,9 +139,9 @@ class AsteroidField extends FlameGame
     lossModal = GameModal(
       onPressed: resetToStart,
       style: GameModalStyle.danger,
-      title: 'Mission Failed',
-      message: 'Your ship was damaged.\nTry again from the start.',
-      buttonText: 'Try Again',
+      title: 'Missão Falhou',
+      message: 'Seu foguete foi danificado.\nTente novamente a partir do início.',
+      buttonText: 'Tentar Novamente',
       titleColor: const Color(0xFFFFD8D2),
       messageColor: const Color(0xFFF0BFB7),
       panelSize: Vector2(480, 260),
@@ -160,7 +163,7 @@ class AsteroidField extends FlameGame
 
     if (isLoaded) {
       statusText.position = canvasSize / 2;
-      coinText.position = Vector2(canvasSize.x - 20, 16);
+      petiscoText.position = Vector2(canvasSize.x - 20, 16);
       progressBg.position = Vector2(canvasSize.x / 2, 14);
 
       if (introModal.isMounted) {
@@ -178,13 +181,22 @@ class AsteroidField extends FlameGame
   }
 
   void showFinishModal() {
+    String message;
+    String buttonText;
+    switch (mode) {
+      case AsteroidFieldMode.story:
+        message = 'Ótimo voo!\nContinue a história quando estiver pronto.';
+        buttonText = 'Continuar';
+      case AsteroidFieldMode.miniGame:
+        message = 'Ótimo voo!\nVolte para os minijogos quando estiver pronto.';
+        buttonText = 'Voltar para Minijogos';
+      case AsteroidFieldMode.standalone:
+        message = 'Ótimo voo!\nInicie uma nova tentativa quando estiver pronto.';
+        buttonText = 'Jogar Novamente';
+    }
     finishModal.configure(
-      message: mode == AsteroidFieldMode.miniGame
-          ? 'Great flight!\nReturn to minigames when ready.'
-          : 'Great flight!\nStart a new run when ready.',
-      buttonText: mode == AsteroidFieldMode.miniGame
-          ? 'Back to Minigames'
-          : 'Play Again',
+      message: message,
+      buttonText: buttonText,
     );
     if (!finishModal.isMounted) {
       finishModal.layoutForSize(size);
@@ -200,8 +212,8 @@ class AsteroidField extends FlameGame
 
   void showLossModal() {
     lossModal.configure(
-      message: 'Your ship was damaged.\nTry again from the start.',
-      buttonText: 'Try Again',
+      message: 'Seu foguete foi danificado.\nTente novamente a partir do início.',
+      buttonText: 'Tentar Novamente',
     );
     if (!lossModal.isMounted) {
       lossModal.layoutForSize(size);
@@ -216,7 +228,7 @@ class AsteroidField extends FlameGame
   }
 
   void onFinishContinue() {
-    if (mode == AsteroidFieldMode.miniGame && onMiniGameFinishExit != null) {
+    if (onMiniGameFinishExit != null) {
       onMiniGameFinishExit!.call();
       return;
     }
@@ -228,6 +240,7 @@ class AsteroidField extends FlameGame
     if (phase != AsteroidFieldPhase.waiting || introModal.isMounted) {
       return;
     }
+
 
     phase = AsteroidFieldPhase.playing;
     statusText.removeFromParent();
@@ -247,14 +260,14 @@ class AsteroidField extends FlameGame
             (child) =>
                 child is Asteroid ||
                 child is FakeExplosion ||
-                child is Coin,
+                child is Petisco,
           )
           .toList(),
     );
 
     asteroidSpawnTimer = 0;
     explosionSpawnTimer = 0;
-    coinSpawnTimer = 0;
+    petiscoSpawnTimer = 0;
     phase = AsteroidFieldPhase.waiting;
 
     statusText.text = 'Tap to start';
@@ -268,8 +281,8 @@ class AsteroidField extends FlameGame
     hideFinishModal();
     hideLossModal();
 
-    coinsCollected = 0;
-    coinText.text = 'Coins: 0';
+    petiscosCollected = 0;
+    petiscoText.text = 'Petiscos: 0';
 
     distanceTravelled = 0;
     progressFill.size.x = 0;
@@ -288,7 +301,7 @@ class AsteroidField extends FlameGame
             (child) =>
                 child is Asteroid ||
                 child is FakeExplosion ||
-                child is Coin,
+                child is Petisco,
           )
           .toList(),
     );
@@ -352,7 +365,7 @@ class AsteroidField extends FlameGame
 
     asteroidSpawnTimer += dt;
     explosionSpawnTimer += dt;
-    coinSpawnTimer += dt;
+    petiscoSpawnTimer += dt;
 
     if (asteroidSpawnTimer >= asteroidSpawnRate) {
       asteroidSpawnTimer = 0;
@@ -364,10 +377,10 @@ class AsteroidField extends FlameGame
       spawnExplosion();
     }
 
-    final progressForCoins = distanceTravelled / finishDistance;
-    if (progressForCoins >= 0.5 && progressForCoins < 0.95 && coinSpawnTimer >= coinSpawnRate) {
-      coinSpawnTimer = 0;
-      spawnCoin();
+    final progressForPetiscos = distanceTravelled / finishDistance;
+    if (progressForPetiscos >= 0.5 && progressForPetiscos < 0.95 && petiscoSpawnTimer >= petiscoSpawnRate) {
+      petiscoSpawnTimer = 0;
+      spawnPetisco();
     }
   }
 
@@ -404,42 +417,42 @@ class AsteroidField extends FlameGame
     add(explosion);
   }
 
-  void spawnCoin() {
-    final coin = Coin(speed: gameSpeed * 0.92);
+  void spawnPetisco() {
+    final petisco = Petisco(speed: gameSpeed * 0.92);
 
     const safeDistance = 180.0;
-    var coinPosition = Vector2(
+    var petiscoPosition = Vector2(
       size.x + 90,
       120 + random.nextDouble() * (size.y - 240),
     );
 
     for (var attempt = 0; attempt < 12; attempt++) {
-      coinPosition = Vector2(
+      petiscoPosition = Vector2(
         size.x + 90,
         120 + random.nextDouble() * (size.y - 240),
       );
 
-      if (_isCoinSpawnSafe(coinPosition, safeDistance)) {
+      if (_isPetiscoSpawnSafe(petiscoPosition, safeDistance)) {
         break;
       }
     }
 
-    coin.position = coinPosition;
+    petisco.position = petiscoPosition;
 
-    add(coin);
+    add(petisco);
   }
 
-  bool _isCoinSpawnSafe(Vector2 coinPosition, double minDistance) {
+  bool _isPetiscoSpawnSafe(Vector2 petiscoPosition, double minDistance) {
     for (final asteroid in children.whereType<Asteroid>()) {
       final asteroidCenter = asteroid.position + asteroid.size / 2;
-      if (coinPosition.distanceTo(asteroidCenter) < minDistance) {
+      if (petiscoPosition.distanceTo(asteroidCenter) < minDistance) {
         return false;
       }
     }
 
     for (final explosion in children.whereType<FakeExplosion>()) {
       final explosionCenter = explosion.position + explosion.size / 2;
-      if (coinPosition.distanceTo(explosionCenter) < minDistance) {
+      if (petiscoPosition.distanceTo(explosionCenter) < minDistance) {
         return false;
       }
     }
@@ -447,13 +460,13 @@ class AsteroidField extends FlameGame
     return true;
   }
 
-  void collectCoin(Coin coin) {
+  void collectPetisco(Petisco petisco) {
     if (phase != AsteroidFieldPhase.playing) {
       return;
     }
 
-    coinsCollected += 1;
-    coinText.text = 'Coins: $coinsCollected';
-    coin.removeFromParent();
+    petiscosCollected += 1;
+    petiscoText.text = 'Petiscos: $petiscosCollected';
+    petisco.removeFromParent();
   }
 }

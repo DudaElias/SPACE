@@ -5,20 +5,40 @@ import 'package:google_fonts/google_fonts.dart';
 
 class RoundedButton extends PositionComponent with TapCallbacks {
   RoundedButton({
-    required this.text,
+    required String text,
     required this.action,
-    required Color color,
+    required this.color,
     super.position,
     super.anchor = Anchor.center,
-  }) : _textDrawable = TextPaint(
-         style: TextStyle(
-           fontSize: 20,
-           fontFamily: GoogleFonts.silkscreen().fontFamily,
-           color: const Color(0xFFFFFFFF),
-           fontWeight: FontWeight.w800,
-         ),
-       ).toTextPainter(text) {
+  }) : _text = text {
     size = Vector2(250, 50);
+    _updateDrawable();
+  }
+
+  String _text;
+  final void Function() action;
+  final Color color;
+  late TextPainter _textDrawable;
+  late Offset _textOffset;
+  late RRect _rrect;
+  late Paint _bgPaint;
+
+  String get text => _text;
+
+  void setText(String newText) {
+    _text = newText;
+    _updateDrawable();
+  }
+
+  void _updateDrawable() {
+    _textDrawable = TextPaint(
+      style: TextStyle(
+        fontSize: 20,
+        fontFamily: GoogleFonts.silkscreen().fontFamily,
+        color: const Color(0xFFFFFFFF),
+        fontWeight: FontWeight.w800,
+      ),
+    ).toTextPainter(_text);
     _textOffset = Offset(
       (size.x - _textDrawable.width) / 2,
       (size.y - _textDrawable.height) / 2,
@@ -26,13 +46,6 @@ class RoundedButton extends PositionComponent with TapCallbacks {
     _rrect = RRect.fromLTRBR(0, 0, size.x, size.y, Radius.circular(size.y / 2));
     _bgPaint = Paint()..color = color;
   }
-
-  final String text;
-  final void Function() action;
-  final TextPainter _textDrawable;
-  late final Offset _textOffset;
-  late final RRect _rrect;
-  late final Paint _bgPaint;
 
   @override
   void render(Canvas canvas) {

@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GameModalStyle {
   const GameModalStyle({
@@ -110,6 +111,7 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
       position: this.size / 2,
       textRenderer: TextPaint(
         style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
           color: style.buttonTextColor,
           fontSize: 18,
           fontWeight: FontWeight.w700,
