@@ -16,67 +16,39 @@ class _BinIcon extends PositionComponent {
 
   ui.Image? _image;
   Color? _circleColor;
-  bool? _stateIsIntact;
 
   void showImage(ui.Image image) {
     _image = image;
     _circleColor = null;
-    _stateIsIntact = null;
   }
 
   void showCircle(Color color) {
     _circleColor = color;
     _image = null;
-    _stateIsIntact = null;
-  }
-
-  void showStateSymbol(bool isIntact) {
-    _stateIsIntact = isIntact;
-    _image = null;
-    _circleColor = null;
   }
 
   @override
   void render(Canvas canvas) {
     if (_image != null) {
-      final sr = Rect.fromLTWH(0, 0, _image!.width.toDouble(), _image!.height.toDouble());
-      final dr = Rect.fromLTWH(0, 0, size.x, size.y);
+      final imgW = _image!.width.toDouble();
+      final imgH = _image!.height.toDouble();
+      final imageAspect = imgW / imgH;
+      final boxAspect = size.x / size.y;
+      double drawW, drawH;
+      if (imageAspect > boxAspect) {
+        drawW = size.x;
+        drawH = size.x / imageAspect;
+      } else {
+        drawH = size.y;
+        drawW = size.y * imageAspect;
+      }
+      final dx = (size.x - drawW) / 2;
+      final dy = (size.y - drawH) / 2;
+      final sr = Rect.fromLTWH(0, 0, imgW, imgH);
+      final dr = Rect.fromLTWH(dx, dy, drawW, drawH);
       canvas.drawImageRect(_image!, sr, dr, Paint());
     } else if (_circleColor != null) {
       canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, Paint()..color = _circleColor!);
-    } else if (_stateIsIntact != null) {
-      if (_stateIsIntact!) {
-        final bgPaint = Paint()..color = const Color(0xFF22C55E);
-        canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, bgPaint);
-        final checkPaint = Paint()
-          ..color = const Color(0xFFFFFFFF)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..strokeCap = StrokeCap.round;
-        final path = Path()
-          ..moveTo(size.x * 0.28, size.y * 0.5)
-          ..lineTo(size.x * 0.45, size.y * 0.68)
-          ..lineTo(size.x * 0.72, size.y * 0.32);
-        canvas.drawPath(path, checkPaint);
-      } else {
-        final bgPaint = Paint()..color = const Color(0xFFEF4444);
-        canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, bgPaint);
-        final xPaint = Paint()
-          ..color = const Color(0xFFFFFFFF)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(
-          Offset(size.x * 0.3, size.y * 0.3),
-          Offset(size.x * 0.7, size.y * 0.7),
-          xPaint,
-        );
-        canvas.drawLine(
-          Offset(size.x * 0.7, size.y * 0.3),
-          Offset(size.x * 0.3, size.y * 0.7),
-          xPaint,
-        );
-      }
     }
   }
 }
@@ -114,12 +86,11 @@ class CollectionBin extends PositionComponent {
 
     switch (criterion) {
       case SortCriterion.shape:
+      case SortCriterion.state:
         final images = findGame()!.images;
         _icon.showImage(images.fromCache(iconPath));
       case SortCriterion.color:
         _icon.showCircle(colorSwatch);
-      case SortCriterion.state:
-        _icon.showStateSymbol(side == BinSide.left);
     }
   }
 

@@ -20,6 +20,7 @@ class SpaceGame extends FlameGame {
       'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',
       'battery-blue', 'battery-blue-broken', 'battery-orange', 'battery-orange-broken',
       'gear', 'gear-broken', 'battery', 'battery-broken',
+      'whole', 'broken',
     ];
     for (final name in pieceNames) {
       await images.load('assets/images/broken_ship_pieces/$name.png');

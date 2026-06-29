@@ -61,7 +61,7 @@ class BrokenShipWorld extends World {
 
     _ruleIndicator = RuleIndicator()
       ..position = Vector2.zero()
-      ..size = Vector2(420, 80);
+      ..size = Vector2(420, 115);
     add(_ruleIndicator);
 
     _repairMeter = RepairMeter()
@@ -94,13 +94,13 @@ class BrokenShipWorld extends World {
 
     _ruleIndicator
       ..position = Vector2(size.x * 0.5, 60)
-      ..size = Vector2(420, 100);
+      ..size = Vector2(420, 115);
 
     _repairMeter
-      ..position = Vector2(size.x * 0.5, 125)
+      ..position = Vector2(size.x * 0.5, 140)
       ..size = Vector2(320, 30);
 
-    _comboDisplay.position = Vector2(size.x * 0.5 + 170, 125);
+    _comboDisplay.position = Vector2(size.x * 0.5 + 170, 140);
 
     final binY = size.y * 0.84;
     _leftBin.position = Vector2(size.x * 0.18, binY);
@@ -201,6 +201,10 @@ class BrokenShipWorld extends World {
       iconLeftPath: _controller.leftBinIconPath,
       iconRightPath: _controller.rightBinIconPath,
       criterion: _controller.currentCriterion,
+      labelLeft: _controller.leftBinLabel,
+      labelRight: _controller.rightBinLabel,
+      colorLeft: const Color(0xFF3B82F6),
+      colorRight: const Color(0xFFF97316),
     );
 
     _leftBin.updateForRule(

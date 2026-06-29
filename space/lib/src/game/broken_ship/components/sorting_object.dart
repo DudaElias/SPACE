@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../broken_ship_controller.dart';
 
-class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
+class SortingObject extends PositionComponent with TapCallbacks {
   SortingObject({
     required this.piece,
   }) : super(
@@ -21,20 +21,16 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
   void Function()? onMissed;
   void Function()? onUnjammed;
 
-  bool _isDragging = false;
   bool _isJammed = false;
-  bool _isReturning = false;
   bool _isAnimatingToBin = false;
   bool _isFallingAway = false;
   bool _fingerDown = false;
 
   double _holdTimer = 0;
-  double _rotationAngle = 0;
   double _fallSpeed = 0;
   double _floatPhase = 0;
   double _jamShakeIntensity = 0;
 
-  Vector2 restPosition = Vector2.zero();
   Vector2 _binTarget = Vector2.zero();
   double _binScaleTarget = 0;
 
@@ -42,10 +38,7 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
   double _displayedOpacity = 1.0;
 
   static const double fallDriftSpeed = 75.0;
-  static const double swipeThreshold = 100.0;
   static const double unjamHoldTime = 0.6;
-  static const double returnSpringRate = 8.0;
-  static const double maxRotationAngle = 0.3;
 
   late final SpriteComponent _sprite;
   late final CircleComponent _holdIndicatorBg;
@@ -68,19 +61,7 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
     _fingerDown = false;
     _holdTimer = 0;
     _jamShakeIntensity = 0;
-    _isReturning = true;
     onUnjammed?.call();
-  }
-
-  void setActive() {
-    _isJammed = false;
-    _isReturning = false;
-    _isAnimatingToBin = false;
-    _isFallingAway = false;
-    _fallSpeed = 0;
-    _displayedOpacity = 1.0;
-    _displayedGrayness = 0;
-    _holdTimer = 0;
   }
 
   void animateToBin(Vector2 target, void Function() onComplete) {
@@ -136,53 +117,6 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
   }
 
   @override
-  void onDragStart(DragStartEvent event) {
-    super.onDragStart(event);
-    if (_isJammed || _isAnimatingToBin || _isFallingAway) return;
-    _isDragging = true;
-    _isReturning = false;
-  }
-
-  @override
-  void onDragUpdate(DragUpdateEvent event) {
-    super.onDragUpdate(event);
-    if (!_isDragging) return;
-    position.add(event.canvasDelta);
-    position.x = position.x.clamp(-40, findGame()!.size.x + 40);
-    position.y = position.y.clamp(0, findGame()!.size.y);
-
-    _rotationAngle =
-        ((position.x - restPosition.x) / swipeThreshold * maxRotationAngle)
-            .clamp(-maxRotationAngle, maxRotationAngle);
-  }
-
-  @override
-  void onDragEnd(DragEndEvent event) {
-    super.onDragEnd(event);
-    if (!_isDragging) return;
-    _isDragging = false;
-
-    final dx = position.x - restPosition.x;
-
-    if (dx < -swipeThreshold) {
-      onSorted?.call(BinSide.left);
-    } else if (dx > swipeThreshold) {
-      onSorted?.call(BinSide.right);
-    } else {
-      _isReturning = true;
-    }
-  }
-
-  @override
-  void onDragCancel(DragCancelEvent event) {
-    super.onDragCancel(event);
-    _isDragging = false;
-    if (!_isJammed) {
-      _isReturning = true;
-    }
-  }
-
-  @override
   void onTapDown(TapDownEvent event) {
     if (_isJammed) {
       _fingerDown = true;
@@ -232,21 +166,8 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
       return;
     }
 
-    if (!_isDragging && !_isReturning) {
-      position.y += fallDriftSpeed * dt;
-      position.x += sin(_floatPhase * 0.7) * dt * 6;
-    }
-
-    if (_isReturning) {
-      final diff = restPosition - position;
-      position.add(diff * (dt * returnSpringRate));
-      _rotationAngle *= (1.0 - dt * 5);
-      if (diff.length < 2.0) {
-        position.setFrom(restPosition);
-        _isReturning = false;
-        _rotationAngle = 0;
-      }
-    }
+    position.y += fallDriftSpeed * dt;
+    position.x += sin(_floatPhase * 0.7) * dt * 6;
 
     if (position.y > findGame()!.size.y - 120) {
       if (!_isFallingAway && !_isAnimatingToBin && !_isJammed) {
@@ -312,11 +233,6 @@ class SortingObject extends PositionComponent with DragCallbacks, TapCallbacks {
     );
 
     final opacity = _displayedOpacity;
-
-    canvas.save();
-    canvas.translate(size.x / 2, size.y / 2);
-    canvas.rotate(_rotationAngle);
-    canvas.translate(-size.x / 2, -size.y / 2);
 
     if (_displayedGrayness > 0.01) {
       canvas.saveLayer(size.toRect(), Paint()..colorFilter = grayFilter);

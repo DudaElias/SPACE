@@ -58,8 +58,8 @@ class BrokenShipController {
 
   static const int objectsPerPhase12 = 5;
   static const int objectsPerRule = 4;
-  static const double baseProgress = 0.03;
-  static const int maxComboLevel = 3;
+  static const double baseProgress = 0.04;
+  static const int maxComboLevel = 4;
   static const double transitionPauseSecs = 0.5;
   static const double transitionFlashSecs = 1.5;
 
@@ -105,7 +105,7 @@ class BrokenShipController {
   String get ruleDescription {
     switch (_currentCriterion) {
       case SortCriterion.shape:
-        return 'Classifique por Formato';
+        return 'Classifique por Tipo de Pe\u00e7a';
       case SortCriterion.color:
         return 'Classifique por Cor';
       case SortCriterion.state:
@@ -142,7 +142,7 @@ class BrokenShipController {
       case SortCriterion.color:
         return 'assets/images/broken_ship_pieces/battery-blue.png';
       case SortCriterion.state:
-        return 'assets/images/broken_ship_pieces/gear.png';
+        return 'assets/images/broken_ship_pieces/whole.png';
     }
   }
 
@@ -153,7 +153,7 @@ class BrokenShipController {
       case SortCriterion.color:
         return 'assets/images/broken_ship_pieces/battery-orange.png';
       case SortCriterion.state:
-        return 'assets/images/broken_ship_pieces/gear-broken.png';
+        return 'assets/images/broken_ship_pieces/broken.png';
     }
   }
 

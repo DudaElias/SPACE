@@ -13,57 +13,40 @@ class _RuleIcon extends PositionComponent {
         );
 
   ui.Image? _image;
-  bool? _stateIsIntact;
+  Color? _circleColor;
 
   void setImage(ui.Image image) {
     _image = image;
-    _stateIsIntact = null;
+    _circleColor = null;
   }
 
-  void setStateSymbol(bool isIntact) {
-    _stateIsIntact = isIntact;
+  void setCircle(Color color) {
+    _circleColor = color;
     _image = null;
   }
 
   @override
   void render(Canvas canvas) {
     if (_image != null) {
-      final sr = Rect.fromLTWH(0, 0, _image!.width.toDouble(), _image!.height.toDouble());
-      final dr = Rect.fromLTWH(0, 0, size.x, size.y);
-      canvas.drawImageRect(_image!, sr, dr, Paint());
-    } else if (_stateIsIntact != null) {
-      if (_stateIsIntact!) {
-        final bgPaint = Paint()..color = const Color(0xFF22C55E);
-        canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, bgPaint);
-        final checkPaint = Paint()
-          ..color = const Color(0xFFFFFFFF)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.5
-          ..strokeCap = StrokeCap.round;
-        final path = Path()
-          ..moveTo(size.x * 0.25, size.y * 0.5)
-          ..lineTo(size.x * 0.45, size.y * 0.7)
-          ..lineTo(size.x * 0.75, size.y * 0.3);
-        canvas.drawPath(path, checkPaint);
+      final imgW = _image!.width.toDouble();
+      final imgH = _image!.height.toDouble();
+      final imageAspect = imgW / imgH;
+      final boxAspect = size.x / size.y;
+      double drawW, drawH;
+      if (imageAspect > boxAspect) {
+        drawW = size.x;
+        drawH = size.x / imageAspect;
       } else {
-        final bgPaint = Paint()..color = const Color(0xFFEF4444);
-        canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, bgPaint);
-        final xPaint = Paint()
-          ..color = const Color(0xFFFFFFFF)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3.5
-          ..strokeCap = StrokeCap.round;
-        canvas.drawLine(
-          Offset(size.x * 0.28, size.y * 0.28),
-          Offset(size.x * 0.72, size.y * 0.72),
-          xPaint,
-        );
-        canvas.drawLine(
-          Offset(size.x * 0.72, size.y * 0.28),
-          Offset(size.x * 0.28, size.y * 0.72),
-          xPaint,
-        );
+        drawH = size.y;
+        drawW = size.y * imageAspect;
       }
+      final dx = (size.x - drawW) / 2;
+      final dy = (size.y - drawH) / 2;
+      final sr = Rect.fromLTWH(0, 0, imgW, imgH);
+      final dr = Rect.fromLTWH(dx, dy, drawW, drawH);
+      canvas.drawImageRect(_image!, sr, dr, Paint());
+    } else if (_circleColor != null) {
+      canvas.drawCircle(Offset(size.x / 2, size.y / 2), size.x / 2, Paint()..color = _circleColor!);
     }
   }
 }
@@ -79,7 +62,8 @@ class RuleIndicator extends PositionComponent {
   late final TextComponent _ruleText;
   late final _RuleIcon _iconLeft;
   late final _RuleIcon _iconRight;
-  late final TextComponent _arrowText;
+  late final TextComponent _labelLeft;
+  late final TextComponent _labelRight;
 
   bool _flashing = false;
   double _flashTimer = 0;
@@ -107,14 +91,20 @@ class RuleIndicator extends PositionComponent {
     required String iconLeftPath,
     required String iconRightPath,
     required SortCriterion criterion,
+    required String labelLeft,
+    required String labelRight,
+    Color? colorLeft,
+    Color? colorRight,
   }) {
     _ruleTextStr = ruleText;
 
     _ruleText.text = ruleText;
+    _labelLeft.text = labelLeft;
+    _labelRight.text = labelRight;
 
-    if (criterion == SortCriterion.state) {
-      _iconLeft.setStateSymbol(true);
-      _iconRight.setStateSymbol(false);
+    if (criterion == SortCriterion.color) {
+      _iconLeft.setCircle(colorLeft ?? const Color(0xFF3B82F6));
+      _iconRight.setCircle(colorRight ?? const Color(0xFFF97316));
     } else {
       final images = findGame()!.images;
       _iconLeft.setImage(images.fromCache(iconLeftPath));
@@ -138,20 +128,33 @@ class RuleIndicator extends PositionComponent {
     );
 
     _iconLeft = _RuleIcon()
-      ..position = Vector2(60, size.y * 0.35);
+      ..position = Vector2(60, size.y * 0.28);
 
     _iconRight = _RuleIcon()
-      ..position = Vector2(size.x - 60, size.y * 0.35);
+      ..position = Vector2(size.x - 60, size.y * 0.28);
 
-    _arrowText = TextComponent(
-      text: '\u2192',
+    _labelLeft = TextComponent(
+      text: '',
       anchor: Anchor.center,
-      position: Vector2(size.x / 2, size.y * 0.35),
+      position: Vector2(60, size.y * 0.65),
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFF94A3B8),
-          fontSize: 24,
-          fontWeight: FontWeight.w700,
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+
+    _labelRight = TextComponent(
+      text: '',
+      anchor: Anchor.center,
+      position: Vector2(size.x - 60, size.y * 0.65),
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Color(0xFF94A3B8),
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
         ),
       ),
     );
@@ -159,17 +162,17 @@ class RuleIndicator extends PositionComponent {
     _ruleText = TextComponent(
       text: _ruleTextStr,
       anchor: Anchor.center,
-      position: Vector2(size.x / 2, size.y * 0.78),
+      position: Vector2(size.x / 2, size.y * 0.88),
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFFE2E8F0),
-          fontSize: 15,
+          fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
 
-    addAll([_panel, _iconLeft, _iconRight, _arrowText, _ruleText]);
+    addAll([_panel, _iconLeft, _iconRight, _labelLeft, _labelRight, _ruleText]);
   }
 
   @override
