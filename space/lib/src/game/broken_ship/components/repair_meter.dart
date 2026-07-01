@@ -48,13 +48,23 @@ class RepairMeter extends PositionComponent {
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFFF8FAFC),
-          fontSize: 13,
+          fontSize: 16,
           fontWeight: FontWeight.w700,
         ),
       ),
     );
 
     addAll([_background, _fill, _label]);
+  }
+
+  void layoutInternals() {
+    _background
+      ..size = size
+      ..position = size / 2;
+    _fill
+      ..size = Vector2(size.x * _displayedProgress, size.y)
+      ..position = Vector2(0, size.y / 2);
+    _label.position = size / 2;
   }
 
   @override

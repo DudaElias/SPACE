@@ -49,7 +49,7 @@ class ComboDisplay extends PositionComponent {
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFFFBBF24),
-          fontSize: 20,
+          fontSize: 24,
           fontWeight: FontWeight.w900,
         ),
       ),

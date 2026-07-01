@@ -1,12 +1,11 @@
 import 'dart:math';
 
 import 'package:flame/components.dart';
-import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 
 import '../broken_ship_controller.dart';
 
-class SortingObject extends PositionComponent with TapCallbacks {
+class SortingObject extends PositionComponent {
   SortingObject({
     required this.piece,
   }) : super(
@@ -19,50 +18,36 @@ class SortingObject extends PositionComponent with TapCallbacks {
 
   void Function(BinSide side)? onSorted;
   void Function()? onMissed;
-  void Function()? onUnjammed;
 
-  bool _isJammed = false;
+  bool isBeingDragged = false;
+
   bool _isAnimatingToBin = false;
   bool _isFallingAway = false;
-  bool _fingerDown = false;
+  bool _isBouncing = false;
 
-  double _holdTimer = 0;
   double _fallSpeed = 0;
   double _floatPhase = 0;
-  double _jamShakeIntensity = 0;
 
   Vector2 _binTarget = Vector2.zero();
   double _binScaleTarget = 0;
-
-  double _displayedGrayness = 0;
   double _displayedOpacity = 1.0;
 
-  static const double fallDriftSpeed = 75.0;
-  static const double unjamHoldTime = 0.6;
+  int _bouncePhase = 0; // 0=drop, 1=bounce
+  double _bounceTimer = 0;
+  double _bounceBaseY = 0;
+  double _bounceStartY = 0;
+  double _bounceVelY = 0;
+  double _bounceSquish = 0;
+  double _driftDir = 0;
+
+  bool _isSnapping = false;
+  double _snapTargetX = 0;
+
+  static const double fallDriftSpeed = 85.0;
 
   late final SpriteComponent _sprite;
-  late final CircleComponent _holdIndicatorBg;
-  late final CircleComponent _holdIndicatorFill;
 
-  bool get isJammed => _isJammed;
-  bool get isAnimating => _isAnimatingToBin || _isFallingAway;
-
-  double _jamPulsePhase = 0;
-
-  void jam() {
-    _isJammed = true;
-    _jamShakeIntensity = 1.0;
-    _jamPulsePhase = 0;
-    _holdTimer = 0;
-  }
-
-  void unjam() {
-    _isJammed = false;
-    _fingerDown = false;
-    _holdTimer = 0;
-    _jamShakeIntensity = 0;
-    onUnjammed?.call();
-  }
+  bool get isAnimating => _isAnimatingToBin || _isFallingAway || _isBouncing;
 
   void animateToBin(Vector2 target, void Function() onComplete) {
     _isAnimatingToBin = true;
@@ -77,8 +62,26 @@ class SortingObject extends PositionComponent with TapCallbacks {
     _onFallComplete = onComplete;
   }
 
+  void bounceOffBin(double binTopY, double driftDir, void Function() onComplete) {
+    _isBouncing = true;
+    _bouncePhase = 0;
+    _bounceTimer = 0;
+    _bounceBaseY = binTopY - 40;
+    _bounceStartY = position.y;
+    _bounceVelY = 0;
+    _bounceSquish = 0;
+    _driftDir = driftDir;
+    _onBounceComplete = onComplete;
+  }
+
+  void snapToCenter(double centerX) {
+    _isSnapping = true;
+    _snapTargetX = centerX;
+  }
+
   void Function()? _onBinAnimationComplete;
   void Function()? _onFallComplete;
+  void Function()? _onBounceComplete;
 
   @override
   Future<void> onLoad() async {
@@ -92,57 +95,7 @@ class SortingObject extends PositionComponent with TapCallbacks {
       position: size / 2,
     );
 
-    _holdIndicatorBg = CircleComponent(
-      radius: 54,
-      anchor: Anchor.center,
-      position: size / 2,
-      paint: Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..color = const Color(0x00000000),
-    );
-
-    _holdIndicatorFill = CircleComponent(
-      radius: 54,
-      anchor: Anchor.center,
-      position: size / 2,
-      paint: Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..color = const Color(0x00000000)
-        ..strokeCap = StrokeCap.round,
-    );
-
-    addAll([_sprite, _holdIndicatorBg, _holdIndicatorFill]);
-  }
-
-  @override
-  void onTapDown(TapDownEvent event) {
-    if (_isJammed) {
-      _fingerDown = true;
-      _holdTimer = 0;
-    }
-  }
-
-  @override
-  void onTapUp(TapUpEvent event) {
-    _fingerDown = false;
-    _holdTimer = 0;
-  }
-
-  @override
-  void onTapCancel(TapCancelEvent event) {
-    _fingerDown = false;
-    _holdTimer = 0;
-  }
-
-  @override
-  bool containsLocalPoint(Vector2 point) {
-    final cx = size.x / 2;
-    final cy = size.y / 2;
-    final dx = point.x - cx;
-    final dy = point.y - cy;
-    return (dx * dx + dy * dy) <= 55 * 55;
+    add(_sprite);
   }
 
   @override
@@ -156,26 +109,37 @@ class SortingObject extends PositionComponent with TapCallbacks {
       return;
     }
 
+    if (_isBouncing) {
+      _updateBounce(dt);
+      return;
+    }
+
     if (_isFallingAway) {
       _updateFallAway(dt);
       return;
     }
 
-    if (_isJammed) {
-      _updateJammed(dt);
-      return;
+    if (_isSnapping) {
+      position.x += (_snapTargetX - position.x) * dt * 8;
+      if ((position.x - _snapTargetX).abs() < 1) {
+        position.x = _snapTargetX;
+        _isSnapping = false;
+      }
     }
 
-    position.y += fallDriftSpeed * dt;
-    position.x += sin(_floatPhase * 0.7) * dt * 6;
+    if (!isBeingDragged) {
+      position.y += fallDriftSpeed * dt;
+      position.x += sin(_floatPhase * 0.7) * dt * 6;
+    } else {
+      position.y += fallDriftSpeed * dt;
+    }
 
     if (position.y > findGame()!.size.y - 120) {
-      if (!_isFallingAway && !_isAnimatingToBin && !_isJammed) {
+      if (!_isFallingAway && !_isAnimatingToBin && !_isBouncing) {
         onMissed?.call();
       }
     }
 
-    _displayedGrayness += ((_isJammed ? 1.0 : 0.0) - _displayedGrayness) * dt * 8;
     _displayedOpacity += ((_isFallingAway ? 0.0 : 1.0) - _displayedOpacity) * dt * 3;
   }
 
@@ -206,37 +170,48 @@ class SortingObject extends PositionComponent with TapCallbacks {
     }
   }
 
-  void _updateJammed(double dt) {
-    _jamShakeIntensity *= (1.0 - dt * 5);
-    if (_jamShakeIntensity < 0.01) _jamShakeIntensity = 0;
-
-    _jamPulsePhase += dt * 2.5;
-
-    if (_fingerDown) {
-      _holdTimer += dt;
-      if (_holdTimer >= unjamHoldTime) {
-        unjam();
+  void _updateBounce(double dt) {
+    if (_bouncePhase == 0) {
+      _bounceTimer += dt;
+      final t = (_bounceTimer / 0.18).clamp(0.0, 1.0);
+      final eased = t * t * (3 - 2 * t);
+      position.y = _bounceStartY + (_bounceBaseY - _bounceStartY) * eased;
+      position.x += _driftDir * 120 * dt;
+      if (t >= 1.0) {
+        _bouncePhase = 1;
+        _bounceVelY = -320;
+        _bounceSquish = 1.0;
       }
+    } else {
+      _bounceVelY += 550 * dt;
+      position.y += _bounceVelY * dt;
+      position.x += _driftDir * 200 * dt;
+
+      if (position.y >= _bounceBaseY && _bounceVelY > 0) {
+        position.y = _bounceBaseY;
+        _bounceVelY = -_bounceVelY * 0.5;
+        _bounceSquish = 0.7;
+      }
+
+      _bounceSquish *= 1.0 - dt * 8;
+      if (_bounceSquish < 0.01) _bounceSquish = 0;
+
+      final sx = (1.0 + _bounceSquish * 0.4).clamp(0.5, 1.5).toDouble();
+      final sy = (1.0 - _bounceSquish * 0.5).clamp(0.5, 1.5).toDouble();
+      scale = Vector2(sx, sy);
+    }
+
+    if (position.x < -120 || position.x > findGame()!.size.x + 120) {
+      _isBouncing = false;
+      _onBounceComplete?.call();
+      _onBounceComplete = null;
     }
   }
 
   @override
   void render(Canvas canvas) {
-    final grayFilter = ColorFilter.mode(
-      Color.fromARGB(
-        (_displayedGrayness * 200).round(),
-        100,
-        100,
-        100,
-      ),
-      BlendMode.modulate,
-    );
-
     final opacity = _displayedOpacity;
 
-    if (_displayedGrayness > 0.01) {
-      canvas.saveLayer(size.toRect(), Paint()..colorFilter = grayFilter);
-    }
     if (opacity < 0.99) {
       canvas.saveLayer(
         size.toRect(),
@@ -246,52 +221,8 @@ class SortingObject extends PositionComponent with TapCallbacks {
 
     super.render(canvas);
 
-    if (_displayedGrayness > 0.01) {
-      final linePaint = Paint()
-        ..color = const Color(0xFFFF4444).withValues(alpha: _displayedGrayness * 0.6)
-        ..strokeWidth = 3;
-      canvas.drawLine(
-        Offset(size.x * 0.25, size.y * 0.25),
-        Offset(size.x * 0.75, size.y * 0.75),
-        linePaint,
-      );
-      canvas.drawLine(
-        Offset(size.x * 0.75, size.y * 0.25),
-        Offset(size.x * 0.25, size.y * 0.75),
-        linePaint,
-      );
-      canvas.restore();
-    }
     if (opacity < 0.99) {
       canvas.restore();
-    }
-
-    canvas.restore();
-
-    if (_isJammed) {
-      final pulseAlpha = (sin(_jamPulsePhase) + 1) / 2 * 0.5 + 0.2;
-      final ringPaint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulseAlpha)
-        ..strokeCap = StrokeCap.round;
-
-      if (_fingerDown && _holdTimer > 0) {
-        final fillPaint = Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 4
-          ..color = const Color(0xFF22C55E).withValues(alpha: 0.9)
-          ..strokeCap = StrokeCap.round;
-        canvas.drawArc(
-          Rect.fromCenter(center: Offset(size.x / 2, size.y / 2), width: 108, height: 108),
-          -1.5708,
-          6.2832 * (_holdTimer / unjamHoldTime),
-          false,
-          fillPaint,
-        );
-      } else {
-        canvas.drawCircle(Offset(size.x / 2, size.y / 2), 54, ringPaint);
-      }
     }
   }
 }

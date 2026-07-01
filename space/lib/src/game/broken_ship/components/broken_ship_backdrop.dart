@@ -10,14 +10,9 @@ class BrokenShipBackdrop extends Component {
   late final RectangleComponent _tubeLeft;
   late final RectangleComponent _tubeRight;
   late final RectangleComponent _floor;
-  late final RectangleComponent _binHighlightLeft;
-  late final RectangleComponent _binHighlightRight;
 
   final List<CircleComponent> _stars = <CircleComponent>[];
   final List<Vector2> _starSeeds = <Vector2>[];
-
-  RectangleComponent get binHighlightLeft => _binHighlightLeft;
-  RectangleComponent get binHighlightRight => _binHighlightRight;
 
   @override
   Future<void> onLoad() async {
@@ -70,26 +65,6 @@ class BrokenShipBackdrop extends Component {
       priority: -1,
     );
 
-    _binHighlightLeft = RectangleComponent(
-      size: Vector2.all(1),
-      anchor: Anchor.center,
-      paint: Paint()
-        ..color = const Color(0xFF1E293B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-      priority: 0,
-    );
-
-    _binHighlightRight = RectangleComponent(
-      size: Vector2.all(1),
-      anchor: Anchor.center,
-      paint: Paint()
-        ..color = const Color(0xFF1E293B)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
-      priority: 0,
-    );
-
     addAll([
       _spaceBackground,
       _nebulaLeft,
@@ -97,8 +72,6 @@ class BrokenShipBackdrop extends Component {
       _tubeLeft,
       _tubeRight,
       _floor,
-      _binHighlightLeft,
-      _binHighlightRight,
     ]);
 
     final rng = Random(42);
@@ -129,7 +102,7 @@ class BrokenShipBackdrop extends Component {
     final tubeXLeft = size.x * 0.28;
     final tubeXRight = size.x * 0.72;
     final tubeTop = size.y * 0.08;
-    final tubeBottom = size.y * 0.78;
+    final tubeBottom = size.y * 0.85;
     final tubeHeight = tubeBottom - tubeTop;
 
     _tubeLeft
@@ -141,20 +114,8 @@ class BrokenShipBackdrop extends Component {
       ..size = Vector2(tubeWidth, tubeHeight);
 
     _floor
-      ..position = Vector2(size.x * 0.5, size.y * 0.82)
-      ..size = Vector2(size.x * 0.72, 6);
-
-    final binWidth = size.x * 0.28;
-    final binHeight = size.y * 0.16;
-    final binY = size.y * 0.84;
-
-    _binHighlightLeft
-      ..position = Vector2(size.x * 0.18, binY)
-      ..size = Vector2(binWidth, binHeight);
-
-    _binHighlightRight
-      ..position = Vector2(size.x * 0.82, binY)
-      ..size = Vector2(binWidth, binHeight);
+      ..position = Vector2(size.x * 0.5, size.y * 0.85)
+      ..size = Vector2(tubeXRight - tubeXLeft, 6);
 
     for (int i = 0; i < _stars.length; i++) {
       final seed = _starSeeds[i];

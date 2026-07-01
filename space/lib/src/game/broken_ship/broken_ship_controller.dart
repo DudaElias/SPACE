@@ -58,7 +58,7 @@ class BrokenShipController {
 
   static const int objectsPerPhase12 = 5;
   static const int objectsPerRule = 4;
-  static const double baseProgress = 0.04;
+  static const double baseProgress = 0.03;
   static const int maxComboLevel = 4;
   static const double transitionPauseSecs = 0.5;
   static const double transitionFlashSecs = 1.5;
@@ -69,7 +69,7 @@ class BrokenShipController {
   int get comboCount => _comboCount;
 
   int get comboMultiplier {
-    final level = 1 + (_comboCount ~/ 4);
+    final level = 1 + (_comboCount ~/ 5);
     return level > maxComboLevel ? maxComboLevel : level;
   }
 
@@ -211,8 +211,6 @@ class BrokenShipController {
 
   void handleMissed() {
     _comboCount = 0;
-    _objectsDealtWithInPhase++;
-    _objectsDealtWithInRule++;
   }
 
   void enterPause() {
@@ -261,11 +259,6 @@ class BrokenShipController {
       return true;
     }
     return false;
-  }
-
-  bool shouldFadeLabels(double elapsedSecInRule) {
-    if (_phase != BrokenShipPhase.phase3) return false;
-    return elapsedSecInRule >= 3.0;
   }
 
   BinSide _evaluatePiece(SortingPiece piece) {

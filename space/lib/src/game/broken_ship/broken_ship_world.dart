@@ -1,4 +1,6 @@
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
 import '../shared/molecules/game_modal.dart';
@@ -11,7 +13,7 @@ import 'components/repair_meter.dart';
 import 'components/rule_indicator.dart';
 import 'components/sorting_object.dart';
 
-class BrokenShipWorld extends World {
+class BrokenShipWorld extends World with DragCallbacks {
   BrokenShipWorld({
     this.mode = BrokenShipMode.standalone,
     this.onMiniGameFinishExit,
@@ -31,9 +33,18 @@ class BrokenShipWorld extends World {
   SortingObject? _currentObject;
   bool _objectAnimating = false;
 
+  bool _isDraggingObject = false;
+  Vector2 _dragInitialPiecePos = Vector2.zero();
+  Vector2 _dragStartPoint = Vector2.zero();
+
   double _phaseTimer = 0;
-  double _ruleElapsedTime = 0;
+  double _flashRemaining = 0;
+  bool _midRevealDone = false;
   bool _gameStarted = false;
+
+  bool _phase3RulePending = false;
+  double _phase3TransitionTimer = 0;
+  bool _phase3RuleRevealed = false;
 
   GameModal? _activeModal;
 
@@ -56,33 +67,46 @@ class BrokenShipWorld extends World {
 
     _controller = BrokenShipController();
 
+    FlameAudio.audioCache.prefix = 'assets/sounds/';
+    await FlameAudio.audioCache.loadAll([
+      'broken_ship/correct.mp3',
+      'broken_ship/incorrect.mp3',
+      'broken_ship/whoosh.mp3',
+      'broken_ship/success.mp3',
+    ]);
+
+    _controller.onCorrect = () => FlameAudio.play('broken_ship/correct.mp3');
+    _controller.onIncorrect = () => FlameAudio.play('broken_ship/incorrect.mp3');
+    _controller.onMiss = () => FlameAudio.play('broken_ship/whoosh.mp3');
+    _controller.onVictory = () => FlameAudio.play('broken_ship/success.mp3');
+
     _backdrop = BrokenShipBackdrop();
     await add(_backdrop);
 
     _ruleIndicator = RuleIndicator()
       ..position = Vector2.zero()
-      ..size = Vector2(420, 115);
-    add(_ruleIndicator);
+      ..size = Vector2.zero();
+    await add(_ruleIndicator);
 
     _repairMeter = RepairMeter()
       ..position = Vector2.zero();
-    add(_repairMeter);
+    await add(_repairMeter);
 
     _comboDisplay = ComboDisplay()
       ..position = Vector2.zero();
-    add(_comboDisplay);
+    await add(_comboDisplay);
 
     _leftBin = CollectionBin(
       side: BinSide.left,
       colorSwatch: const Color(0xFF3B82F6),
     )..position = Vector2.zero();
-    add(_leftBin);
+    await add(_leftBin);
 
     _rightBin = CollectionBin(
       side: BinSide.right,
       colorSwatch: const Color(0xFFF97316),
     )..position = Vector2.zero();
-    add(_rightBin);
+    await add(_rightBin);
 
     _layoutForSize(findGame()!.size);
 
@@ -92,19 +116,33 @@ class BrokenShipWorld extends World {
   void _layoutForSize(Vector2 size) {
     _backdrop.layoutForSize(size);
 
+    final tubeLeftX = size.x * 0.28;
+    final tubeRightX = size.x * 0.72;
+    final tubeWidth = tubeRightX - tubeLeftX;
+
     _ruleIndicator
-      ..position = Vector2(size.x * 0.5, 60)
-      ..size = Vector2(420, 115);
+      ..position = Vector2(size.x * 0.5, size.y * 0.09)
+      ..size = Vector2(tubeWidth, size.y * 0.17);
 
     _repairMeter
-      ..position = Vector2(size.x * 0.5, 140)
-      ..size = Vector2(320, 30);
+      ..position = Vector2(size.x * 0.5, size.y * 0.21)
+      ..size = Vector2(tubeWidth * 0.82, size.y * 0.047);
 
-    _comboDisplay.position = Vector2(size.x * 0.5 + 170, 140);
+    _comboDisplay.position = Vector2(size.x * 0.5 + tubeWidth * 0.48, size.y * 0.21);
 
-    final binY = size.y * 0.84;
-    _leftBin.position = Vector2(size.x * 0.18, binY);
-    _rightBin.position = Vector2(size.x * 0.82, binY);
+    final binHeight = size.y * 0.15;
+    final binY = size.y - binHeight * 0.5;
+    final maxBinWidth = tubeLeftX;
+    _leftBin.position = Vector2(tubeLeftX - maxBinWidth * 0.5, binY);
+    _leftBin.size = Vector2(maxBinWidth, size.y * 0.15);
+
+    _rightBin.position = Vector2(tubeRightX + maxBinWidth * 0.5, binY);
+    _rightBin.size = Vector2(maxBinWidth, size.y * 0.15);
+
+    _ruleIndicator.layoutInternals();
+    _repairMeter.layoutInternals();
+    _leftBin.layoutInternals();
+    _rightBin.layoutInternals();
   }
 
   @override
@@ -118,6 +156,21 @@ class BrokenShipWorld extends World {
   @override
   void update(double dt) {
     super.update(dt);
+
+    if (_flashRemaining > 0) {
+      _flashRemaining -= dt;
+      if (!_midRevealDone &&
+          _flashRemaining <= BrokenShipController.transitionFlashSecs * 0.6) {
+        _midRevealDone = true;
+        _controller.advanceFromTransition();
+        _refreshRuleUI();
+        _leftBin.labelOpacity = 1.0;
+        _rightBin.labelOpacity = 1.0;
+      }
+      if (_flashRemaining <= 0) {
+        _ruleIndicator.setFlashing(false);
+      }
+    }
 
     if (_activeModal != null) {
       _activeModal!.layoutForSize(findGame()!.size);
@@ -145,23 +198,27 @@ class BrokenShipWorld extends World {
 
       case BrokenShipPhase.phase1Transition:
       case BrokenShipPhase.phase2Transition:
-        _updateTransition(dt);
         break;
     }
   }
 
   void _updateGameplay(double dt) {
-    _ruleElapsedTime += dt;
 
-    if (_controller.phase == BrokenShipPhase.phase3) {
-      final shouldFade = _controller.shouldFadeLabels(_ruleElapsedTime);
-      if (shouldFade) {
-        _leftBin.labelOpacity += (0.0 - _leftBin.labelOpacity) * dt * 1.5;
-        _rightBin.labelOpacity += (0.0 - _rightBin.labelOpacity) * dt * 1.5;
+    if (_phase3RulePending) {
+      _phase3TransitionTimer -= dt;
+      if (!_phase3RuleRevealed && _phase3TransitionTimer <= 0.6) {
+        _phase3RuleRevealed = true;
+        _controller.advancePhase3Rule();
+        _refreshRuleUI();
+      }
+      if (_phase3TransitionTimer <= 0) {
+        _phase3RulePending = false;
+        _phase3RuleRevealed = false;
+        _ruleIndicator.setFlashing(false);
       }
     }
 
-    if (_currentObject == null && !_objectAnimating) {
+    if (_currentObject == null && !_objectAnimating && !_phase3RulePending) {
       _spawnNextObject();
     }
   }
@@ -171,25 +228,19 @@ class BrokenShipWorld extends World {
     if (_phaseTimer <= 0) {
       _controller.advanceFromPause();
       _ruleIndicator.setFlashing(true);
-      _phaseTimer = BrokenShipController.transitionFlashSecs;
-    }
-  }
-
-  void _updateTransition(double dt) {
-    _phaseTimer -= dt;
-    if (_phaseTimer <= 0) {
-      _controller.advanceFromTransition();
-      _ruleIndicator.setFlashing(false);
-      _refreshRuleUI();
-      _ruleElapsedTime = 0;
-      _leftBin.labelOpacity = 1.0;
-      _rightBin.labelOpacity = 1.0;
+      _flashRemaining = BrokenShipController.transitionFlashSecs;
+      _midRevealDone = false;
     }
   }
 
   void _startGame() {
     _controller.startGame();
     _gameStarted = true;
+    _phase3RulePending = false;
+    _phase3TransitionTimer = 0;
+    _phase3RuleRevealed = false;
+    _flashRemaining = 0;
+    _midRevealDone = false;
     _refreshRuleUI();
     _repairMeter.setProgress(0);
     _comboDisplay.reset();
@@ -228,15 +279,11 @@ class BrokenShipWorld extends World {
     final size = findGame()!.size;
     final spawnX = size.x * 0.5;
     final spawnY = size.y * 0.22;
-    final restX = size.x * 0.5;
-    final restY = size.y * 0.48;
 
     _currentObject = SortingObject(piece: piece)
       ..position = Vector2(spawnX, spawnY)
-      ..restPosition = Vector2(restX, restY)
       ..onSorted = _handleSorted
-      ..onMissed = _handleMissed
-      ..onUnjammed = _handleUnjammed;
+      ..onMissed = _handleMissed;
 
     add(_currentObject!);
   }
@@ -268,7 +315,6 @@ class BrokenShipWorld extends World {
       case SortingResult.incorrect:
         _controller.handleIncorrect();
         _controller.onIncorrect?.call();
-        _controller.onJam?.call();
         _comboDisplay.setCombo(_controller.comboCount);
 
         if (side == BinSide.left) {
@@ -277,8 +323,16 @@ class BrokenShipWorld extends World {
           _rightBin.flashIncorrect();
         }
 
-        _currentObject!.jam();
-        _objectAnimating = false;
+        final binTopY = side == BinSide.left
+            ? _leftBin.position.y - _leftBin.size.y * 0.5
+            : _rightBin.position.y - _rightBin.size.y * 0.5;
+        final driftDir = side == BinSide.left ? -1.0 : 1.0;
+        _currentObject!.bounceOffBin(binTopY, driftDir, () {
+          _currentObject?.removeFromParent();
+          _currentObject = null;
+          _objectAnimating = false;
+          _afterObjectDealtWith();
+        });
         break;
 
       case SortingResult.missed:
@@ -300,14 +354,6 @@ class BrokenShipWorld extends World {
     });
   }
 
-  void _handleUnjammed() {
-    _controller.onUnjam?.call();
-    _currentObject?.restPosition = Vector2(
-      findGame()!.size.x * 0.5,
-      findGame()!.size.y * 0.48,
-    );
-  }
-
   void _afterObjectDealtWith() {
     final phase = _controller.phase;
 
@@ -318,10 +364,9 @@ class BrokenShipWorld extends World {
       }
     } else if (phase == BrokenShipPhase.phase3) {
       if (_controller.ruleObjectsElapsed >= BrokenShipController.objectsPerRule) {
-        _controller.advancePhase3Rule();
-        _ruleIndicator.flashBrief();
-        _refreshRuleUI();
-        _ruleElapsedTime = 0;
+        _phase3RulePending = true;
+        _phase3TransitionTimer = 1.0;
+        _ruleIndicator.setFlashing(true);
       }
 
       if (_controller.checkVictory()) {
@@ -365,5 +410,71 @@ class BrokenShipWorld extends World {
     );
     add(_activeModal!);
     _activeModal!.layoutForSize(findGame()!.size);
+  }
+
+  @override
+  bool containsLocalPoint(Vector2 point) {
+    if (!_gameStarted ||
+        _currentObject == null ||
+        _currentObject!.isAnimating ||
+        _objectAnimating) {
+      return false;
+    }
+    final gameSize = findGame()!.size;
+    return point.x >= 0 &&
+        point.x < gameSize.x &&
+        point.y >= gameSize.y * 0.1 &&
+        point.y < gameSize.y * 0.9;
+  }
+
+  @override
+  void onDragStart(DragStartEvent event) {
+    super.onDragStart(event);
+    if (_currentObject == null || _currentObject!.isAnimating) return;
+    _isDraggingObject = true;
+    _currentObject!.isBeingDragged = true;
+    _dragStartPoint = event.canvasPosition;
+    _dragInitialPiecePos = _currentObject!.position.clone();
+  }
+
+  @override
+  void onDragUpdate(DragUpdateEvent event) {
+    super.onDragUpdate(event);
+    if (!_isDraggingObject || _currentObject == null || _currentObject!.isAnimating) return;
+    final dx = event.canvasEndPosition.x - _dragStartPoint.x;
+    _currentObject!.position.x = (_dragInitialPiecePos.x + dx).clamp(20, findGame()!.size.x - 20);
+  }
+
+  @override
+  void onDragEnd(DragEndEvent event) {
+    super.onDragEnd(event);
+    if (!_isDraggingObject) return;
+    _isDraggingObject = false;
+    if (_currentObject == null) return;
+    _currentObject!.isBeingDragged = false;
+
+    if (_currentObject!.isAnimating || _objectAnimating) return;
+
+    final objX = _currentObject!.position.x;
+    final tubeLeftX = findGame()!.size.x * 0.28;
+    final tubeRightX = findGame()!.size.x * 0.72;
+    final centerX = findGame()!.size.x * 0.5;
+    if (objX < tubeLeftX) {
+      _handleSorted(BinSide.left);
+    } else if (objX > tubeRightX) {
+      _handleSorted(BinSide.right);
+    } else {
+      _currentObject!.snapToCenter(centerX);
+    }
+  }
+
+  @override
+  void onDragCancel(DragCancelEvent event) {
+    super.onDragCancel(event);
+    if (!_isDraggingObject) return;
+    _isDraggingObject = false;
+    if (_currentObject != null) {
+      _currentObject!.isBeingDragged = false;
+    }
   }
 }

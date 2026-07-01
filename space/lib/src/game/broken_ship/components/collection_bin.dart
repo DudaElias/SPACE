@@ -10,7 +10,7 @@ import '../broken_ship_controller.dart';
 class _BinIcon extends PositionComponent {
   _BinIcon()
       : super(
-          size: Vector2.all(40),
+          size: Vector2.all(48),
           anchor: Anchor.center,
         );
 
@@ -102,6 +102,17 @@ class CollectionBin extends PositionComponent {
     _incorrectFlashTimer = 0.35;
   }
 
+  void layoutInternals() {
+    _background
+      ..size = size
+      ..position = size / 2;
+    _glowBorder
+      ..size = size
+      ..position = size / 2;
+    _icon.position = Vector2(size.x / 2, size.y * 0.35);
+    _labelText.position = Vector2(size.x / 2, size.y * 0.72);
+  }
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -132,7 +143,7 @@ class CollectionBin extends PositionComponent {
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFFCBD5E1),
-          fontSize: 14,
+          fontSize: 17,
           fontWeight: FontWeight.w600,
         ),
       ),

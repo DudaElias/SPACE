@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   flame: ^1.37.0
+  flame_audio: ^2.12.1
   google_fonts: ^8.1.0
   flutter:
     sdk: flutter
@@ -25,6 +26,8 @@ flutter:
   assets:
     - assets/images/
     - assets/images/broken_ship_pieces/
+    - assets/sounds/
+    - assets/sounds/broken_ship/
 
 
 flutter_launcher_icons:

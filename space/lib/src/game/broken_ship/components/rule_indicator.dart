@@ -8,7 +8,7 @@ import '../broken_ship_controller.dart';
 class _RuleIcon extends PositionComponent {
   _RuleIcon()
       : super(
-          size: Vector2.all(36),
+          size: Vector2.all(44),
           anchor: Anchor.center,
         );
 
@@ -67,23 +67,15 @@ class RuleIndicator extends PositionComponent {
 
   bool _flashing = false;
   double _flashTimer = 0;
-  bool _flashVisible = true;
-
-  double _displayedOpacity = 1.0;
-  double _targetOpacity = 1.0;
-
-  String _ruleTextStr = '';
 
   void setFlashing(bool flashing) {
     _flashing = flashing;
     _flashTimer = 0;
-    _flashVisible = true;
   }
 
   void flashBrief() {
     _flashing = true;
     _flashTimer = 0;
-    _flashVisible = true;
   }
 
   void updateRule({
@@ -96,8 +88,6 @@ class RuleIndicator extends PositionComponent {
     Color? colorLeft,
     Color? colorRight,
   }) {
-    _ruleTextStr = ruleText;
-
     _ruleText.text = ruleText;
     _labelLeft.text = labelLeft;
     _labelRight.text = labelRight;
@@ -112,10 +102,6 @@ class RuleIndicator extends PositionComponent {
     }
   }
 
-  void setOpacity(double opacity) {
-    _targetOpacity = opacity;
-  }
-
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -128,19 +114,19 @@ class RuleIndicator extends PositionComponent {
     );
 
     _iconLeft = _RuleIcon()
-      ..position = Vector2(60, size.y * 0.28);
+      ..position = Vector2(size.x * 0.14, size.y * 0.28);
 
     _iconRight = _RuleIcon()
-      ..position = Vector2(size.x - 60, size.y * 0.28);
+      ..position = Vector2(size.x * 0.86, size.y * 0.28);
 
     _labelLeft = TextComponent(
       text: '',
       anchor: Anchor.center,
-      position: Vector2(60, size.y * 0.65),
+      position: Vector2(size.x * 0.14, size.y * 0.65),
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFF94A3B8),
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -149,24 +135,24 @@ class RuleIndicator extends PositionComponent {
     _labelRight = TextComponent(
       text: '',
       anchor: Anchor.center,
-      position: Vector2(size.x - 60, size.y * 0.65),
+      position: Vector2(size.x * 0.86, size.y * 0.65),
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFF94A3B8),
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
       ),
     );
 
     _ruleText = TextComponent(
-      text: _ruleTextStr,
+      text: '',
       anchor: Anchor.center,
       position: Vector2(size.x / 2, size.y * 0.88),
       textRenderer: TextPaint(
         style: const TextStyle(
           color: Color(0xFFE2E8F0),
-          fontSize: 13,
+          fontSize: 16,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -175,31 +161,41 @@ class RuleIndicator extends PositionComponent {
     addAll([_panel, _iconLeft, _iconRight, _labelLeft, _labelRight, _ruleText]);
   }
 
+  void layoutInternals() {
+    _panel
+      ..size = size
+      ..position = size / 2;
+    _iconLeft.position = Vector2(size.x * 0.14, size.y * 0.28);
+    _iconRight.position = Vector2(size.x * 0.86, size.y * 0.28);
+    _labelLeft.position = Vector2(size.x * 0.14, size.y * 0.65);
+    _labelRight.position = Vector2(size.x * 0.86, size.y * 0.65);
+    _ruleText.position = Vector2(size.x / 2, size.y * 0.88);
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
 
-    _displayedOpacity += (_targetOpacity - _displayedOpacity) * dt * 6;
-
     if (_flashing) {
       _flashTimer += dt;
-      final period = 0.3;
-      _flashVisible = (_flashTimer % period) < (period * 0.5);
-
-      if (_flashTimer > 1.5) {
-        _flashing = false;
-        _flashVisible = true;
-      }
     }
   }
 
   @override
   void render(Canvas canvas) {
-    final opacity = _displayedOpacity * (_flashVisible ? 1.0 : 0.2);
-    if (opacity <= 0.01) return;
-
-    canvas.saveLayer(size.toRect(), Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: opacity));
     super.render(canvas);
-    canvas.restore();
+
+    if (_flashing) {
+      final period = 0.35;
+      final phase = (_flashTimer % period) / period;
+      final flashAlpha = (phase < 0.5) ? phase * 2 : (1.0 - (phase - 0.5) * 2);
+      final flashColor = const Color(0xFF62D5FF).withValues(alpha: flashAlpha * 0.9);
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3
+        ..color = flashColor;
+      final rect = RRect.fromRectAndRadius(size.toRect(), const Radius.circular(6));
+      canvas.drawRRect(rect, paint);
+    }
   }
 }
