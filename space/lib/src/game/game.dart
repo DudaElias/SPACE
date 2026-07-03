@@ -1,5 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:space/src/game/asteroid_field/asteroid_field.dart';
+import 'package:space/src/game/broken_ship/broken_ship_route.dart';
 import 'package:space/src/game/control_panel/control_panel_route.dart';
 import 'package:space/src/game/menu.dart';
 import 'package:space/src/game/minigames.dart';
@@ -80,6 +81,19 @@ class SpaceGame extends FlameGame {
     await images.load('background_history.png');
     await images.load('bone.png');
 
+    final savedPrefix = images.prefix;
+    images.prefix = '';
+    const pieceNames = [
+      'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',
+      'battery-blue', 'battery-blue-broken', 'battery-orange', 'battery-orange-broken',
+      'gear', 'gear-broken', 'battery', 'battery-broken',
+      'whole', 'broken',
+    ];
+    for (final name in pieceNames) {
+      await images.load('assets/images/broken_ship_pieces/$name.png');
+    }
+    images.prefix = savedPrefix;
+
     add(
       router = RouterComponent(
         routes: {
@@ -104,8 +118,8 @@ class SpaceGame extends FlameGame {
             maintainState: false,
           ),
           'minigame-3': Route(
-            () => AsteroidField(
-              mode: AsteroidFieldMode.miniGame,
+            () => BrokenShipRoute(
+              mode: BrokenShipRoute.miniGame,
               onMiniGameFinishExit: router.pop,
               onBackPressed: _popRoute,
             ),
