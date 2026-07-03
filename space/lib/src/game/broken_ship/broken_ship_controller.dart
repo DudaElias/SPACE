@@ -39,7 +39,7 @@ class SortingPiece {
     final shapeStr = shape.name;
     final colorStr = color.name;
     final brokenSuffix = state == PieceState.broken ? '-broken' : '';
-    return 'assets/images/broken_ship_pieces/$shapeStr-$colorStr$brokenSuffix.png';
+    return 'broken_ship_pieces/$shapeStr-$colorStr$brokenSuffix.png';
   }
 }
 
@@ -138,22 +138,22 @@ class BrokenShipController {
   String get leftBinIconPath {
     switch (_currentCriterion) {
       case SortCriterion.shape:
-        return 'assets/images/broken_ship_pieces/gear.png';
+        return 'broken_ship_pieces/gear.png';
       case SortCriterion.color:
-        return 'assets/images/broken_ship_pieces/battery-blue.png';
+        return 'broken_ship_pieces/battery-blue.png';
       case SortCriterion.state:
-        return 'assets/images/broken_ship_pieces/whole.png';
+        return 'broken_ship_pieces/whole.png';
     }
   }
 
   String get rightBinIconPath {
     switch (_currentCriterion) {
       case SortCriterion.shape:
-        return 'assets/images/broken_ship_pieces/battery.png';
+        return 'broken_ship_pieces/battery.png';
       case SortCriterion.color:
-        return 'assets/images/broken_ship_pieces/battery-orange.png';
+        return 'broken_ship_pieces/battery-orange.png';
       case SortCriterion.state:
-        return 'assets/images/broken_ship_pieces/broken.png';
+        return 'broken_ship_pieces/broken.png';
     }
   }
 

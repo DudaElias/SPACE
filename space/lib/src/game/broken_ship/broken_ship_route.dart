@@ -6,7 +6,7 @@ import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/broken_ship/broken_ship_world.dart';
 import 'package:space/src/game/game.dart';
 
-enum BrokenShipMode { standalone, miniGame }
+enum BrokenShipMode { standalone, miniGame, story }
 
 class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
   static const BrokenShipMode standalone = BrokenShipMode.standalone;

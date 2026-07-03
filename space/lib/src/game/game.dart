@@ -49,6 +49,14 @@ class SpaceGame extends FlameGame {
     router.pop();
   }
 
+  void onChallenge3Complete() {
+    unlockedMinigames.add('minigame-3');
+    storyReturned = true;
+    _recordRanking('minigame-3', 'win', 0);
+    _saveUnlock('minigame-3');
+    router.pop();
+  }
+
   void onMinigame1Complete() {
     _recordRanking('minigame-1', 'win', 0);
     router.pop();
@@ -56,6 +64,11 @@ class SpaceGame extends FlameGame {
 
   void onMinigame2Complete() {
     _recordRanking('minigame-2', 'win', 0);
+    router.pop();
+  }
+
+  void onMinigame3Complete() {
+    _recordRanking('minigame-3', 'win', 0);
     router.pop();
   }
 
@@ -81,18 +94,15 @@ class SpaceGame extends FlameGame {
     await images.load('background_history.png');
     await images.load('bone.png');
 
-    final savedPrefix = images.prefix;
-    images.prefix = '';
-    const pieceNames = [
+    final pieceNames = [
       'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',
       'battery-blue', 'battery-blue-broken', 'battery-orange', 'battery-orange-broken',
       'gear', 'gear-broken', 'battery', 'battery-broken',
       'whole', 'broken',
     ];
     for (final name in pieceNames) {
-      await images.load('assets/images/broken_ship_pieces/$name.png');
+      await images.load('broken_ship_pieces/$name.png');
     }
-    images.prefix = savedPrefix;
 
     add(
       router = RouterComponent(
@@ -119,9 +129,8 @@ class SpaceGame extends FlameGame {
           ),
           'minigame-3': Route(
             () => BrokenShipRoute(
-              mode: BrokenShipRoute.miniGame,
-              onMiniGameFinishExit: router.pop,
-              onBackPressed: _popRoute,
+              mode: BrokenShipMode.miniGame,
+              onMiniGameFinishExit: onMinigame3Complete,
             ),
             maintainState: false,
           ),
@@ -137,6 +146,13 @@ class SpaceGame extends FlameGame {
               mode: AsteroidFieldMode.story,
               onMiniGameFinishExit: onChallenge2Complete,
               onBackPressed: _popRoute,
+            ),
+            maintainState: false,
+          ),
+          'story-challenge-3': Route(
+            () => BrokenShipRoute(
+              mode: BrokenShipMode.story,
+              onMiniGameFinishExit: onChallenge3Complete,
             ),
             maintainState: false,
           )

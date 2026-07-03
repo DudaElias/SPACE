@@ -10,7 +10,7 @@ import 'package:space/src/game/shared/atoms/button.dart';
 import 'package:space/src/game/shared/molecules/database.dart';
 import 'package:space/src/game/shared/settings.dart';
 
-enum _StoryAction { nextOnly, launchMinigame1, launchMinigame2, finish }
+enum _StoryAction { nextOnly, launchMinigame1, launchMinigame2, launchMinigame3, finish }
 
 class _LaikaRenderInfo {
   _LaikaRenderInfo(this.position, this.size);
@@ -63,9 +63,11 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
         buttonLabel: 'Atravessar!',
       ),
       _Chapter(
-        text: 'Laika passou pelos asteroides e encontrou seu humano!\nMas o foguete quebrou na aterrissagem.\nEm breve: ajude a consertar as peças do foguete!',
+        text: 'Laika passou pelos asteroides e encontrou seu humano!\nMas o foguete quebrou na aterrissagem.\nAjude a consertar as peças do foguete para que possam voltar!',
         drawScene: _drawHumanScene,
         laikaInfo: _LaikaRenderInfo(Vector2(0.37, 0.35), _laikaBaseSize * 0.8),
+        action: _StoryAction.launchMinigame3,
+        buttonLabel: 'Consertar o Foguete!',
       ),
       _Chapter(
         text: 'Missão Cumprida!\nLaika e seu humano estão juntos outra vez!\nObrigado por ajudar, Piloto Espacial! 🌟',
@@ -160,6 +162,11 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
         game.storyReturned = false;
         _awaitingReturn = true;
         game.router.pushNamed('story-challenge-2');
+      case _StoryAction.launchMinigame3:
+        _setStoryChapter(_chapterIndex + 1);
+        game.storyReturned = false;
+        _awaitingReturn = true;
+        game.router.pushNamed('story-challenge-3');
       case _StoryAction.finish:
         _setStoryChapter(0);
         game.router.pop();

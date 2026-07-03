@@ -8,11 +8,8 @@ environment:
 
 dependencies:
   flame: ^1.37.0
-<<<<<<< HEAD
   flutter_svg: ^2.3.0
-=======
   flame_audio: ^2.12.1
->>>>>>> origin/feat/broken-ship-minigame-3
   google_fonts: ^8.1.0
   sqflite: ^2.3.0
   sqflite_common_ffi: ^2.3.0
