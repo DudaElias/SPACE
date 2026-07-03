@@ -1,23 +1,29 @@
 import 'package:flame/components.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:space/src/game/game.dart';
 import 'package:space/src/game/shared/atoms/button.dart';
+import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/molecules/game_modal.dart';
 import 'package:space/src/game/shared/settings.dart';
 
 class Menu extends Component with HasGameReference<SpaceGame> {
-  late final SpriteComponent _logo;
-  late final RoundedButton _btnStory;
-  late final RoundedButton _btnMinigames;
-  late final RoundedButton _btnRanking;
-  late final RoundedButton _btnHelp;
-  late final RoundedButton _btnConfig;
+  late SpriteComponent _logo;
+  late RoundedButton _btnStory;
+  late RoundedButton _btnMinigames;
+  late RoundedButton _btnRanking;
+  late RoundedButton _btnHelp;
+  late RoundedButton _btnConfig;
   GameModal? _activeModal;
   bool _laidOut = false;
+  final List<Component> _hudComponents = [];
 
   @override
   Future<void> onMount() async {
     super.onMount();
+    removeAll(children);
+    _laidOut = false;
+    _activeModal = null;
     final logoImage = game.images.fromCache('logo.png');
 
     _logo = SpriteComponent(sprite: Sprite(logoImage), size: Vector2(380, 380), anchor: Anchor.center);
@@ -29,7 +35,16 @@ class Menu extends Component with HasGameReference<SpaceGame> {
 
     addAll([_logo, _btnStory, _btnMinigames, _btnRanking, _btnHelp, _btnConfig]);
 
+    _hudComponents.add(SimpleBackButton());
+    game.camera.viewport.addAll(_hudComponents);
+
     _updateStoryButton();
+  }
+
+  @override
+  void onRemove() {
+    game.camera.viewport.removeAll(_hudComponents);
+    super.onRemove();
   }
 
   @override
@@ -94,6 +109,17 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     );
     _activeModal!.layoutForSize(game.size);
     add(_activeModal!);
+
+    final size = game.size;
+    final closeBtn = _CloseButton(
+      position: Vector2(size.x / 2 + 232, size.y / 2 - 240),
+      onTap: () {
+        _activeModal?.removeFromParent();
+        _activeModal = null;
+      },
+    );
+    closeBtn.priority = 200;
+    _activeModal!.add(closeBtn);
   }
 
   void _cycleDifficulty() {
@@ -107,4 +133,22 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     }
     _activeModal?.configure(message: 'Dificuldade: ${d.difficultyLabel}\nToque abaixo para mudar.');
   }
+}
+
+class _CloseButton extends PositionComponent with TapCallbacks {
+  _CloseButton({required super.position, required this.onTap})
+    : super(size: Vector2.all(32), anchor: Anchor.center);
+
+  final VoidCallback onTap;
+
+  @override
+  void render(Canvas canvas) {
+    canvas.drawCircle(const Offset(16, 16), 14, Paint()..color = Colors.white.withValues(alpha: 0.2));
+    final p = Paint()..color = Colors.white70..strokeWidth = 2.5..style = PaintingStyle.stroke;
+    canvas.drawLine(const Offset(10, 10), const Offset(22, 22), p);
+    canvas.drawLine(const Offset(22, 10), const Offset(10, 22), p);
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) => onTap();
 }

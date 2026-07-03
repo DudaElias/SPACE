@@ -1,4 +1,5 @@
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:io' show Platform;
 
@@ -25,13 +26,27 @@ class DatabaseHelper {
         databaseFactory = databaseFactoryFfi;
       }
     } catch (_) {}
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'space_game.db');
+
+    String path;
+    try {
+      final dbPath = await getDatabasesPath();
+      path = join(dbPath, 'space_game.db');
+    } catch (_) {
+      path = join('.', 'space_game.db');
+    }
+
     _db = await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute("ALTER TABLE users ADD COLUMN unlocked_minigames TEXT DEFAULT ''");
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -39,7 +54,8 @@ class DatabaseHelper {
       CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        story_progress INTEGER DEFAULT 0
+        story_progress INTEGER DEFAULT 0,
+        unlocked_minigames TEXT DEFAULT ''
       )
     ''');
 
@@ -101,5 +117,20 @@ class DatabaseHelper {
       WHERE r.minigame = ?
       ORDER BY r.played_at DESC
     ''', [minigame]);
+  }
+
+  Future<List<String>> getUserUnlockedMinigames(int userId) async {
+    final rows = await _db!.query('users', columns: ['unlocked_minigames'], where: 'id = ?', whereArgs: [userId]);
+    if (rows.isEmpty) return [];
+    final raw = rows.first['unlocked_minigames'] as String?;
+    if (raw == null || raw.isEmpty) return [];
+    return raw.split(',');
+  }
+
+  Future<void> unlockMinigameForUser(int userId, String minigameId) async {
+    final current = await getUserUnlockedMinigames(userId);
+    if (current.contains(minigameId)) return;
+    current.add(minigameId);
+    await _db!.update('users', {'unlocked_minigames': current.join(',')}, where: 'id = ?', whereArgs: [userId]);
   }
 }

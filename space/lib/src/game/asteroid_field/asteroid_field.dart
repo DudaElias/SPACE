@@ -17,6 +17,7 @@ class AsteroidField extends FlameGame
     with HasGameReference, HasCollisionDetection, DragCallbacks, TapCallbacks {
   final AsteroidFieldMode mode;
   final VoidCallback? onMiniGameFinishExit;
+  final VoidCallback? onBackPressed;
 
   late RocketPlayer player;
   late TextComponent statusText;
@@ -48,6 +49,7 @@ class AsteroidField extends FlameGame
   AsteroidField({
     this.mode = AsteroidFieldMode.standalone,
     this.onMiniGameFinishExit,
+    this.onBackPressed,
   });
 
   @override
@@ -149,7 +151,7 @@ class AsteroidField extends FlameGame
     lossModal.priority = 100;
 
     backButton = GameBackButton(
-      onPressed: onFinishContinue,
+      onPressed: onBackPressed ?? onFinishContinue,
       position: Vector2(24, 24),
       anchor: Anchor.topLeft,
       size: Vector2.all(40),

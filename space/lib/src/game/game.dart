@@ -15,10 +15,28 @@ class SpaceGame extends FlameGame {
   bool storyReturned = false;
   final Set<String> unlockedMinigames = <String>{};
 
+  Future<void> loadUserUnlocks(int userId) async {
+    if (userId == 0) return;
+    final helper = await DatabaseHelper.getInstance();
+    final list = await helper.getUserUnlockedMinigames(userId);
+    unlockedMinigames.clear();
+    unlockedMinigames.addAll(list);
+  }
+
+  Future<void> _saveUnlock(String minigame) async {
+    final userId = GameSettings.instance.currentUserId;
+    if (userId == 0) return;
+    final helper = await DatabaseHelper.getInstance();
+    await helper.unlockMinigameForUser(userId, minigame);
+  }
+
+  void _popRoute() => router.pop();
+
   void onChallenge1Complete() {
     unlockedMinigames.add('minigame-1');
     storyReturned = true;
     _recordRanking('minigame-1', 'win', 0);
+    _saveUnlock('minigame-1');
     router.pop();
   }
 
@@ -26,6 +44,7 @@ class SpaceGame extends FlameGame {
     unlockedMinigames.add('minigame-2');
     storyReturned = true;
     _recordRanking('minigame-2', 'win', 0);
+    _saveUnlock('minigame-2');
     router.pop();
   }
 
@@ -80,6 +99,7 @@ class SpaceGame extends FlameGame {
             () => AsteroidField(
               mode: AsteroidFieldMode.miniGame,
               onMiniGameFinishExit: onMinigame2Complete,
+              onBackPressed: _popRoute,
             ),
             maintainState: false,
           ),
@@ -87,6 +107,7 @@ class SpaceGame extends FlameGame {
             () => AsteroidField(
               mode: AsteroidFieldMode.miniGame,
               onMiniGameFinishExit: router.pop,
+              onBackPressed: _popRoute,
             ),
             maintainState: false,
           ),
@@ -101,6 +122,7 @@ class SpaceGame extends FlameGame {
             () => AsteroidField(
               mode: AsteroidFieldMode.story,
               onMiniGameFinishExit: onChallenge2Complete,
+              onBackPressed: _popRoute,
             ),
             maintainState: false,
           )
