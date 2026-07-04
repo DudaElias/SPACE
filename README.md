@@ -36,6 +36,16 @@ minigames for standalone play.
 | 2 | **Asteroid Field** | Selective Attention | The player navigates the rocket through an asteroid belt, dodging obstacles and fake explosions while ignoring distractions on screen. Collectible treats provide bonus points. |
 | 3 | **Broken Ship Repair** | Cognitive Flexibility | The ship is damaged and must be repaired. The player classifies falling pieces into the correct bins, but the sorting criterion changes over time: first by shape, then by color, then by state (broken/whole), with rules cycling unpredictably at the highest difficulty. |
 
+### Screenshots
+
+<p align="center">
+  <img src="screenshots/minigame1.png" width="30%" alt="Minigame 1: Control Panel" />
+  &nbsp;
+  <img src="screenshots/minigame2.png" width="30%" alt="Minigame 2: Asteroid Field" />
+  &nbsp;
+  <img src="screenshots/minigame3.png" width="30%" alt="Minigame 3: Broken Ship Repair" />
+</p>
+
 ### Progression & Features
 
 - **Player profiles**: multiple local players supported via SQLite storage
@@ -45,6 +55,38 @@ minigames for standalone play.
 - **Ranking**: per-minigame leaderboard with win/loss, score, difficulty, and
   date
 - **Audio**: volume control with mute toggle
+
+### Difficulty Scaling
+
+Each difficulty level affects gameplay parameters across all three minigames.
+Difficulty is a global setting, selectable from the main menu settings panel.
+
+#### Control Panel (Working Memory)
+
+| Parameter | Easy | Medium | Hard |
+|-----------|------|--------|------|
+| Max rounds to win | 5 | 6 | 8 |
+| Sequence playback flash duration | 0.6s | 0.5s | 0.4s |
+| Sequence playback gap between flashes | 0.4s | 0.3s | 0.2s |
+| Delay before next round | 1.2s | 0.9s | 0.7s |
+
+#### Asteroid Field (Selective Attention)
+
+| Parameter | Easy | Medium | Hard |
+|-----------|------|--------|------|
+| Scrolling speed multiplier | 1.0x | 1.3x | 1.7x |
+| Asteroid spawn interval | 1.0s | 0.8s | 0.6s |
+| Fake explosion spawn interval | 2.2s | 1.76s | 1.32s |
+| Petisco (bone) spawn interval | 1.6s | 1.28s | 0.96s |
+| Finish distance (pixels) | 5000 | 7000 | 10000 |
+
+#### Broken Ship Repair (Cognitive Flexibility)
+
+| Parameter | Easy | Medium | Hard |
+|-----------|------|--------|------|
+| Repair progress per correct sort | 4% | 3% | 2% |
+| Object fall speed | 65 px/s | 85 px/s | 110 px/s |
+| Rule transition flash duration | 2.0s | 1.5s | 1.0s |
 
 ---
 
