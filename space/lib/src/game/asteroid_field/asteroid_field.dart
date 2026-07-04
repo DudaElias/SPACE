@@ -272,7 +272,7 @@ class AsteroidField extends FlameGame
     petiscoSpawnTimer = 0;
     phase = AsteroidFieldPhase.waiting;
 
-    statusText.text = 'Tap to start';
+    statusText.text = 'Clique para começar';
     statusText.position = size / 2;
 
     if (!statusText.isMounted) {
