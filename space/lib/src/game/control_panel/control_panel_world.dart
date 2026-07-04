@@ -8,6 +8,7 @@ import 'components/control_button.dart';
 import 'components/control_panel_backdrop.dart';
 import 'control_panel_controller.dart';
 import '../shared/molecules/game_modal.dart';
+import '../shared/settings.dart';
 import 'control_panel_route.dart';
 
 class ControlPanelWorld extends World {
@@ -16,10 +17,23 @@ class ControlPanelWorld extends World {
     this.mode = ControlPanelMode.standalone,
     this.onMiniGameFinishExit,
   })
-    : _controller = controller ?? ControlPanelController();
+    : _controller = controller ?? ControlPanelController(maxRounds: _difficultyMaxRounds());
+
+  static int _difficultyMaxRounds() {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 5;
+      case GameSettings.medium:
+        return 6;
+      case GameSettings.hard:
+        return 8;
+      default:
+        return 6;
+    }
+  }
 
   static const String _statusIntro =
-    'Prepare o doguinho para a missão. Toque em Iniciar!';
+    'Toque para começar';
   static const String _statusStart =
     'Cachorro astronauta, memorize para ligar o foguete!';
   static const String _statusPlayback =
@@ -57,13 +71,52 @@ class ControlPanelWorld extends World {
   double _nextRoundDelay = 0;
   bool _awaitingNextRound = false;
   bool _awaitingStart = true;
+  double _introDelay = 0;
+  bool _awaitingIntroDelay = false;
   bool _victoryDialogOpen = false;
   GameModal? _activeDialog;
   final List<double> _inputFlashRemaining = List<double>.filled(4, 0);
   final List<double> _buttonScale = List<double>.filled(4, 1.0);
 
-  static const double _lightDurationSeconds = 0.5;
-  static const double _gapDurationSeconds = 0.3;
+  double get _lightDurationSeconds {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 0.6;
+      case GameSettings.medium:
+        return 0.5;
+      case GameSettings.hard:
+        return 0.4;
+      default:
+        return 0.5;
+    }
+  }
+
+  double get _gapDurationSeconds {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 0.4;
+      case GameSettings.medium:
+        return 0.3;
+      case GameSettings.hard:
+        return 0.2;
+      default:
+        return 0.3;
+    }
+  }
+
+  double get _difficultyNextRoundDelay {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 1.2;
+      case GameSettings.medium:
+        return 0.9;
+      case GameSettings.hard:
+        return 0.7;
+      default:
+        return 0.9;
+    }
+  }
+
   static const double _inputFlashSeconds = 0.2;
 
   @override
@@ -181,7 +234,8 @@ class ControlPanelWorld extends World {
     _victoryDialogOpen = false;
     _activeDialog?.removeFromParent();
     _activeDialog = null;
-    _startGame();
+    _awaitingIntroDelay = true;
+    _introDelay = 0.75;
   }
 
   void _closeVictoryDialog() {
@@ -204,6 +258,7 @@ class ControlPanelWorld extends World {
     }
     _updatePlayback(dt);
     _updateRoundTimer(dt);
+    _updateIntroDelay(dt);
     _updateInputFlash(dt);
     _updateButtonScale(dt);
   }
@@ -329,6 +384,18 @@ class ControlPanelWorld extends World {
     }
   }
 
+  void _updateIntroDelay(double dt) {
+    if (!_awaitingIntroDelay) {
+      return;
+    }
+
+    _introDelay -= dt;
+    if (_introDelay <= 0) {
+      _awaitingIntroDelay = false;
+      _startGame();
+    }
+  }
+
   void _updateInputFlash(double dt) {
     for (int index = 0; index < _inputFlashRemaining.length; index += 1) {
       final double remaining = _inputFlashRemaining[index];
@@ -355,7 +422,12 @@ class ControlPanelWorld extends World {
   }
 
   void _handleButtonPressed(int index) {
-    if (_awaitingStart || _victoryDialogOpen) {
+    if (_awaitingStart) {
+      _startFromIntroDialog();
+      return;
+    }
+
+    if (_victoryDialogOpen) {
       return;
     }
 
@@ -395,7 +467,7 @@ class ControlPanelWorld extends World {
         _updateLevelText();
         _setStatus(_statusNext);
         _awaitingNextRound = true;
-        _nextRoundDelay = 0.9;
+        _nextRoundDelay = _difficultyNextRoundDelay;
       case ControlPanelInputResult.gameWon:
         _updateProgressDots();
         _updateLevelText();

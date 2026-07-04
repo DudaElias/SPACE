@@ -41,7 +41,18 @@ class AsteroidField extends FlameGame
   int petiscosCollected = 0;
   AsteroidFieldPhase phase = AsteroidFieldPhase.waiting;
   double distanceTravelled = 0.0;
-  double finishDistance = 5000.0;
+  double get finishDistance {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 5000.0;
+      case GameSettings.medium:
+        return 7000.0;
+      case GameSettings.hard:
+        return 10000.0;
+      default:
+        return 5000.0;
+    }
+  }
   late RectangleComponent progressBg;
   late RectangleComponent progressFill;
   late SpriteComponent progressShip;
@@ -64,7 +75,7 @@ class AsteroidField extends FlameGame
     add(player);
 
     statusText = TextComponent(
-      text: 'Clique para começar',
+      text: 'Toque para começar',
       textRenderer: TextPaint(
         style: TextStyle(
           fontFamily: GoogleFonts.silkscreen().fontFamily,
@@ -272,7 +283,7 @@ class AsteroidField extends FlameGame
     petiscoSpawnTimer = 0;
     phase = AsteroidFieldPhase.waiting;
 
-    statusText.text = 'Clique para começar';
+    statusText.text = 'Toque para começar';
     statusText.position = size / 2;
 
     if (!statusText.isMounted) {

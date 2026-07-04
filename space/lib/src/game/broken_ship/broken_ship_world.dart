@@ -49,6 +49,19 @@ class BrokenShipWorld extends World with DragCallbacks {
 
   GameModal? _activeModal;
 
+  double get _fallSpeed {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 65.0;
+      case GameSettings.medium:
+        return 85.0;
+      case GameSettings.hard:
+        return 110.0;
+      default:
+        return 85.0;
+    }
+  }
+
   static const String _introTitle = 'Conserte a Nave';
   static const String _introMessage =
       'Classifique as pe\u00e7as para consertar a nave!\n'
@@ -170,7 +183,7 @@ class BrokenShipWorld extends World with DragCallbacks {
     if (_flashRemaining > 0) {
       _flashRemaining -= dt;
       if (!_midRevealDone &&
-          _flashRemaining <= BrokenShipController.transitionFlashSecs * 0.6) {
+          _flashRemaining <= _controller.transitionFlashSecs * 0.6) {
         _midRevealDone = true;
         _controller.advanceFromTransition();
         _refreshRuleUI();
@@ -238,7 +251,7 @@ class BrokenShipWorld extends World with DragCallbacks {
     if (_phaseTimer <= 0) {
       _controller.advanceFromPause();
       _ruleIndicator.setFlashing(true);
-      _flashRemaining = BrokenShipController.transitionFlashSecs;
+      _flashRemaining = _controller.transitionFlashSecs;
       _midRevealDone = false;
     }
   }
@@ -290,7 +303,7 @@ class BrokenShipWorld extends World with DragCallbacks {
     final spawnX = size.x * 0.5;
     final spawnY = size.y * 0.22;
 
-    _currentObject = SortingObject(piece: piece)
+    _currentObject = SortingObject(piece: piece, fallSpeed: _fallSpeed)
       ..position = Vector2(spawnX, spawnY)
       ..onSorted = _handleSorted
       ..onMissed = _handleMissed;

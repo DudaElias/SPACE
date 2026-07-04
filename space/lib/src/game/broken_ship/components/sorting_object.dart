@@ -8,6 +8,7 @@ import '../broken_ship_controller.dart';
 class SortingObject extends PositionComponent {
   SortingObject({
     required this.piece,
+    this.fallSpeed = 85.0,
   }) : super(
           priority: 20,
           anchor: Anchor.center,
@@ -15,6 +16,7 @@ class SortingObject extends PositionComponent {
         );
 
   final SortingPiece piece;
+  final double fallSpeed;
 
   void Function(BinSide side)? onSorted;
   void Function()? onMissed;
@@ -42,8 +44,6 @@ class SortingObject extends PositionComponent {
 
   bool _isSnapping = false;
   double _snapTargetX = 0;
-
-  static const double fallDriftSpeed = 85.0;
 
   late final SpriteComponent _sprite;
 
@@ -128,10 +128,10 @@ class SortingObject extends PositionComponent {
     }
 
     if (!isBeingDragged) {
-      position.y += fallDriftSpeed * dt;
+      position.y += fallSpeed * dt;
       position.x += sin(_floatPhase * 0.7) * dt * 6;
     } else {
-      position.y += fallDriftSpeed * dt;
+      position.y += fallSpeed * dt;
     }
 
     if (position.y > findGame()!.size.y - 120) {
