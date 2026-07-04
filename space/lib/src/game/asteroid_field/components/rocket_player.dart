@@ -22,19 +22,31 @@ class RocketPlayer extends PositionComponent
   Vector2 targetPosition = Vector2.zero();
   late Vector2 startPosition;
   late SpriteComponent spriteComponent;
+  late PolygonHitbox hitbox;
 
   @override
   Future<void> onLoad() async {
     size = Vector2(200, 150);
     anchor = Anchor.center;
 
-    add(
-      RectangleHitbox.relative(
-        Vector2.all(0.75),
-        parentSize: size,
+    hitbox = PolygonHitbox(
+        [
+          Vector2(75, 6),
+          Vector2(68, 16),
+          Vector2(50, 25),
+          Vector2(20, 32),
+          Vector2(-18, 52),
+          Vector2(-55, 50),
+          Vector2(-75, 25),
+          Vector2(-75, -15),
+          Vector2(-45, -55),
+          Vector2(-10, -50),
+          Vector2(20, -25),
+          Vector2(55, -12),
+        ],
         anchor: Anchor.center,
-      ),
-    );
+      );
+    add(hitbox);
 
     final sprite = await Sprite.load('icon.png');
     spriteComponent = SpriteComponent(
@@ -57,6 +69,7 @@ class RocketPlayer extends PositionComponent
     position = startPosition.clone();
     targetPosition = position.clone();
     spriteComponent.position = size / 2;
+    hitbox.position = size / 2;
   }
 
   void resetPosition() {

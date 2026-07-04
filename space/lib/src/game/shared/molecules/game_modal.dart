@@ -129,8 +129,14 @@ class GameModal extends PositionComponent {
 
   void configure({String? title, String? message, String? buttonText}) {
     if (!_uiReady) return;
+    final game = findGame();
     if (title != null) _titleText.text = title;
-    if (message != null) { _pendingMessage = message; _applyLayout(findGame()!.size); }
+    if (message != null) {
+      _pendingMessage = message;
+      if (game != null) {
+        _applyLayout(game.size);
+      }
+    }
     if (buttonText != null) _button.setLabel(buttonText);
   }
 }
