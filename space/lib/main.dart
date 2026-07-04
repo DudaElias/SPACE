@@ -16,34 +16,42 @@ void main() {
   runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: ValueListenableBuilder<Color>(
-        valueListenable: game.barColor,
-        builder: (context, barColor, child) => Scaffold(
-          backgroundColor: barColor,
-          body: child!,
-        ),
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: ClipRect(
-              child: SizedBox(
-                width: 1280,
-                height: 800,
-                child: GameWidget(
-                  game: game,
-                  backgroundBuilder: (context) => Container(
-                    color: const Color.fromARGB(255, 93, 101, 152),
-                  ),
-                  overlayBuilderMap: {
-                    'nameInput': (context, game) {
-                      final spaceGame = game as SpaceGame;
-                      return NameInputOverlay(
-                        title: 'Novo Jogador',
-                        onConfirm: spaceGame.onNameInputConfirm,
-                        onCancel: spaceGame.onNameInputCancel,
-                      );
+      home: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop && game.router.canPop()) {
+            game.router.pop();
+          }
+        },
+        child: ValueListenableBuilder<Color>(
+          valueListenable: game.barColor,
+          builder: (context, barColor, child) => Scaffold(
+            backgroundColor: barColor,
+            body: child!,
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: ClipRect(
+                child: SizedBox(
+                  width: 1280,
+                  height: 800,
+                  child: GameWidget(
+                    game: game,
+                    backgroundBuilder: (context) => Container(
+                      color: const Color.fromARGB(255, 93, 101, 152),
+                    ),
+                    overlayBuilderMap: {
+                      'nameInput': (context, game) {
+                        final spaceGame = game as SpaceGame;
+                        return NameInputOverlay(
+                          title: 'Novo Jogador',
+                          onConfirm: spaceGame.onNameInputConfirm,
+                          onCancel: spaceGame.onNameInputCancel,
+                        );
+                      },
                     },
-                  },
+                  ),
                 ),
               ),
             ),

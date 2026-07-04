@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import '../shared/settings.dart';
+
 enum SortCriterion { shape, color, state }
 
 enum Shape { gear, battery }
@@ -58,10 +60,34 @@ class BrokenShipController {
 
   static const int objectsPerPhase12 = 5;
   static const int objectsPerRule = 4;
-  static const double baseProgress = 0.03;
   static const int maxComboLevel = 4;
   static const double transitionPauseSecs = 0.5;
-  static const double transitionFlashSecs = 1.5;
+
+  double get baseProgress {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 0.04;
+      case GameSettings.medium:
+        return 0.03;
+      case GameSettings.hard:
+        return 0.02;
+      default:
+        return 0.03;
+    }
+  }
+
+  double get transitionFlashSecs {
+    switch (GameSettings.instance.difficulty) {
+      case GameSettings.easy:
+        return 2.0;
+      case GameSettings.medium:
+        return 1.5;
+      case GameSettings.hard:
+        return 1.0;
+      default:
+        return 1.5;
+    }
+  }
 
   BrokenShipPhase get phase => _phase;
   SortCriterion get currentCriterion => _currentCriterion;
