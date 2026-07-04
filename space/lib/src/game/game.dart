@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:ui' show Color;
+
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart';
 import 'package:space/src/game/asteroid_field/asteroid_field.dart';
 import 'package:space/src/game/broken_ship/broken_ship_route.dart';
 import 'package:space/src/game/control_panel/control_panel_route.dart';
@@ -15,6 +19,73 @@ class SpaceGame extends FlameGame {
   int storyChapter = 0;
   bool storyReturned = false;
   final Set<String> unlockedMinigames = <String>{};
+
+  final ValueNotifier<Color> barColor = ValueNotifier<Color>(const Color(0xFF5D6598));
+
+  static const _gameplayRoutes = {
+    'story-mode',
+    'minigame-1', 'minigame-2', 'minigame-3',
+    'story-challenge-1', 'story-challenge-2', 'story-challenge-3',
+  };
+
+  static const _menuBarColor = Color(0xFF5D6598);
+  static const _gameBarColor = Color(0xFF020617);
+
+  String? _lastRouteName;
+  bool _overlayOpen = false;
+
+  void setGlobalVolume(double volume) {
+    GameSettings.instance.soundVolume = volume;
+  }
+
+  void _applyBarColor() {
+    final route = router.currentRoute.name;
+    if (route == null) return;
+    Color base = _gameplayRoutes.contains(route) ? _gameBarColor : _menuBarColor;
+    if (_overlayOpen) {
+      base = Color.alphaBlend(const Color(0xCC020617), base);
+    }
+    barColor.value = base;
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final name = router.currentRoute.name;
+    if (name != _lastRouteName) {
+      _lastRouteName = name;
+      _applyBarColor();
+    }
+  }
+
+  void setOverlayOpen(bool open) {
+    _overlayOpen = open;
+    _applyBarColor();
+  }
+
+  Completer<String?>? _nameInputCompleter;
+
+  Future<String?> requestPlayerName() {
+    _nameInputCompleter?.complete(null);
+    _nameInputCompleter = Completer<String?>();
+    overlays.add('nameInput');
+    setOverlayOpen(true);
+    return _nameInputCompleter!.future;
+  }
+
+  void onNameInputConfirm(String name) {
+    overlays.remove('nameInput');
+    setOverlayOpen(false);
+    _nameInputCompleter?.complete(name);
+    _nameInputCompleter = null;
+  }
+
+  void onNameInputCancel() {
+    overlays.remove('nameInput');
+    setOverlayOpen(false);
+    _nameInputCompleter?.complete(null);
+    _nameInputCompleter = null;
+  }
 
   Future<void> loadUserUnlocks(int userId) async {
     if (userId == 0) return;

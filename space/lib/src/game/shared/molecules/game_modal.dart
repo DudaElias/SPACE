@@ -10,6 +10,9 @@ class GameModal extends PositionComponent {
     required this.message,
     required this.buttonText,
     required this.onPressed,
+    this.onBackdropTap,
+    this.secondaryButtonText,
+    this.onSecondaryPressed,
     this.style = GameModalStyle.shared,
     this.titleColor = const Color(0xFFE2E8F0),
     this.messageColor = const Color(0xFFE2E8F0),
@@ -21,6 +24,9 @@ class GameModal extends PositionComponent {
   final String message;
   final String buttonText;
   final VoidCallback onPressed;
+  final VoidCallback? onBackdropTap;
+  final String? secondaryButtonText;
+  final VoidCallback? onSecondaryPressed;
   final GameModalStyle style;
   final Color titleColor;
   final Color messageColor;
@@ -30,6 +36,7 @@ class GameModal extends PositionComponent {
   late GameModalShell _panel;
   late TextComponent _titleText;
   late GameModalActionButton _button;
+  GameModalActionButton? _secondaryButton;
   ScrollTextBoxComponent<TextPaint>? _msgComponent;
   Vector2? _pendingLayoutSize;
   bool _uiReady = false;
@@ -37,7 +44,7 @@ class GameModal extends PositionComponent {
 
   @override
   Future<void> onLoad() async {
-    _backdrop = GameModalBackdrop();
+    _backdrop = GameModalBackdrop(onBackdropTap: onBackdropTap);
     _panel = GameModalShell(size: panelSize, style: style)..priority = 101;
 
     _titleText = TextComponent(
@@ -56,6 +63,16 @@ class GameModal extends PositionComponent {
     )..priority = 102;
 
     addAll([_backdrop, _panel, _titleText, _button]);
+
+    if (secondaryButtonText != null && onSecondaryPressed != null) {
+      _secondaryButton = GameModalActionButton(
+        label: secondaryButtonText!,
+        onPressed: onSecondaryPressed!,
+        style: style.copyWithInverse(),
+        size: Vector2(180, 48),
+      )..priority = 102;
+      add(_secondaryButton!);
+    }
     _uiReady = true;
 
     final targetSize = _pendingLayoutSize ?? findGame()!.size;
@@ -67,7 +84,16 @@ class GameModal extends PositionComponent {
     _backdrop..position = Vector2.zero()..size = gameSize..anchor = Anchor.topLeft;
     _panel.position = gameSize / 2;
     _titleText.position = _panel.position + Vector2(0, -panelSize.y / 2 + 36);
-    _button.position = _panel.position + Vector2(0, panelSize.y / 2 - 36);
+
+    if (_secondaryButton != null) {
+      final gap = 20.0;
+      final secHalf = 90.0;
+      final primHalf = 105.0;
+      _secondaryButton!.position = _panel.position + Vector2(-primHalf - gap / 2, panelSize.y / 2 - 36);
+      _button.position = _panel.position + Vector2(secHalf + gap / 2, panelSize.y / 2 - 36);
+    } else {
+      _button.position = _panel.position + Vector2(0, panelSize.y / 2 - 36);
+    }
 
     final text = _pendingMessage.isNotEmpty ? _pendingMessage : message;
     final renderer = TextPaint(

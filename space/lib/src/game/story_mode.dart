@@ -136,7 +136,9 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
       laikaInfo: chapter.laikaInfo,
       spaceshipSprite: spaceship,
       bgSprite: bgSprite,
-      onBack: () => game.router.pop(),
+      onBack: () {
+          game.router.pop();
+      },
     );
     add(_page);
   }
@@ -147,7 +149,7 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
         _setStoryChapter(_chapterIndex + 1);
         if (_chapterIndex + 1 >= _chapters.length) {
           _setStoryChapter(0);
-          game.router.pop();
+              game.router.pop();
         } else {
           _chapterIndex++;
           _buildPage();
@@ -169,7 +171,7 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
         game.router.pushNamed('story-challenge-3');
       case _StoryAction.finish:
         _setStoryChapter(0);
-        game.router.pop();
+          game.router.pop();
     }
   }
 
@@ -181,7 +183,7 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
       _chapterIndex = game.storyChapter;
       if (_chapterIndex >= _chapters.length) {
         _setStoryChapter(0);
-        game.router.pop();
+          game.router.pop();
       } else {
         _buildPage();
       }
