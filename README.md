@@ -139,16 +139,6 @@ lib/src/game/
 - **users** — `id`, `name`, `story_progress`, `unlocked_minigames`
 - **ranking** — `id`, `user_id`, `minigame`, `played_at`, `result`, `score`, `difficulty`
 
-### Key Metrics
-
-| Metric | Value |
-|--------|-------|
-| Dart source files | ~37 |
-| Lines of code | ~5,700 |
-| Image assets | 25 |
-| Sound assets | 4 |
-| Supported platforms | 6 |
-
 ---
 
 ## How to Run
