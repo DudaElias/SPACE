@@ -12,6 +12,7 @@ class GameCard extends PositionComponent
   final String imageAssetPath;
   final String title;
   final VoidCallback onTap;
+  final bool isLocked;
   late Sprite? cardImage;
 
   bool isPressed = false;
@@ -22,6 +23,7 @@ class GameCard extends PositionComponent
     required Vector2 position,
     required this.onTap,
     Vector2? cardSize,
+    this.isLocked = false,
   }) : super(position: position, size: cardSize ?? defaultCardSize);
 
   @override
@@ -76,6 +78,16 @@ class GameCard extends PositionComponent
         ..style = PaintingStyle.stroke
         ..strokeWidth = (isPressed || isHovered) ? 3 : 2,
     );
+
+    if (isLocked) {
+      canvas.drawRRect(
+        rrect,
+        Paint()..color = Colors.black.withAlpha(160),
+      );
+      _drawLockIcon(canvas);
+      return;
+    }
+
     var h = size.y;
     if (!isPressed && !isHovered) {
       h -= 200;
@@ -111,15 +123,51 @@ class GameCard extends PositionComponent
     );
   }
 
+  void _drawLockIcon(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final lockPaint = Paint()
+      ..color = Colors.white70
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.5;
+    final fillPaint = Paint()..color = Colors.white70;
+
+    canvas.drawCircle(
+      Offset(cx, cy - 6),
+      9,
+      lockPaint,
+    );
+    canvas.drawLine(
+      Offset(cx, cy - 6),
+      Offset(cx, cy - 14),
+      lockPaint,
+    );
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(cx, cy + 8), width: 22, height: 18),
+        const Radius.circular(3),
+      ),
+      fillPaint,
+    );
+    canvas.drawLine(
+      Offset(cx, cy + 4),
+      Offset(cx, cy + 12),
+      Paint()
+        ..color = const Color(0xFF050816)
+        ..strokeWidth = 2.5,
+    );
+  }
+
   @override
   void onTapDown(TapDownEvent event) {
+    if (isLocked) return;
     isPressed = true;
   }
 
   @override
   void onTapUp(TapUpEvent event) {
     isPressed = false;
-    onTap();
+    if (!isLocked) onTap();
   }
 
   @override

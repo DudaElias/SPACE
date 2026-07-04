@@ -10,7 +10,7 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
   @override
   Future<void> onLoad() async {
     final cardSize = GameCard.defaultCardSize;
-    final spacing = Vector2(20, 20); // space between cards
+    final spacing = Vector2(20, 20);
     final columns = 3;
     final rows = 1;
 
@@ -44,13 +44,15 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
     for (int col = 0; col < minigames.length; col++) {
       final position = Vector2(startX + col * (cardSize.x + spacing.x), startY);
       final minigame = minigames[col];
+      final unlocked = game.unlockedMinigames.contains(minigame.routeName);
 
       add(
         GameCard(
-          imageAssetPath: 'game_${col + 1}.png', // Placeholder image for all minigames
-          title: minigame.title,
+          imageAssetPath: 'game_${col + 1}.png',
+          title: unlocked ? minigame.title : '???',
           position: position,
           onTap: () => game.router.pushNamed(minigame.routeName),
+          isLocked: !unlocked,
         ),
       );
     }

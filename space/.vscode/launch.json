@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "space (Flutter Pixel Tablet)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "Flutter Pixel Tablet"
+        },
+        {
+            "name": "space",
+            "request": "launch",
+            "type": "dart"
+        }
+    ]
+}

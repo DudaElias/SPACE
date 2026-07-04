@@ -8,8 +8,13 @@ environment:
 
 dependencies:
   flame: ^1.37.0
+  flutter_svg: ^2.3.0
   flame_audio: ^2.12.1
   google_fonts: ^8.1.0
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path_provider: ^2.1.0
+  path: ^1.8.0
   flutter:
     sdk: flutter
 

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'components/control_button.dart';
 import 'components/control_panel_backdrop.dart';
@@ -76,8 +77,9 @@ class ControlPanelWorld extends World {
       text: 'Ativar Painel de Controle',
       priority: 12,
       textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0xFFFFFFFF),
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFFFFFFF),
           fontSize: 32,
           fontWeight: FontWeight.w700,
         ),
@@ -88,8 +90,9 @@ class ControlPanelWorld extends World {
       text: 'Memorize e repita a sequência! Nível 1/${_controller.maxRounds}',
       priority: 12,
       textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0xFFCCCCCC),
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFCCCCCC),
           fontSize: 18,
           fontWeight: FontWeight.w500,
         ),
@@ -99,8 +102,9 @@ class ControlPanelWorld extends World {
     _statusText = TextComponent(
       priority: 12,
       textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0xFFFFFFFF),
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFFFFFFF),
           fontSize: 16,
           fontWeight: FontWeight.w400,
         ),
@@ -181,7 +185,7 @@ class ControlPanelWorld extends World {
   }
 
   void _closeVictoryDialog() {
-    if (mode == ControlPanelMode.miniGame && onMiniGameFinishExit != null) {
+    if (onMiniGameFinishExit != null) {
       onMiniGameFinishExit!.call();
       return;
     }
@@ -483,13 +487,20 @@ class ControlPanelWorld extends World {
   }
 
   void _showVictoryDialog() {
+    String buttonText;
+    switch (mode) {
+      case ControlPanelMode.storyMode:
+        buttonText = 'Continuar';
+      case ControlPanelMode.miniGame:
+        buttonText = 'Voltar aos Minigames';
+      case ControlPanelMode.standalone:
+        buttonText = 'Continuar';
+    }
     _showDialog(GameModal(
       title: 'Missão Cumprida!',
       message:
           'Painel de controle ativado com sucesso. O foguete está pronto para decolar.',
-      buttonText: mode == ControlPanelMode.miniGame
-          ? 'Voltar aos Minigames'
-          : 'Continuar',
+      buttonText: buttonText,
       onPressed: _closeVictoryDialog,
     ));
   }

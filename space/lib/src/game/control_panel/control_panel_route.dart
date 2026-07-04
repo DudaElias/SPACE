@@ -6,7 +6,7 @@ import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/control_panel/control_panel_world.dart';
 import 'package:space/src/game/game.dart';
 
-enum ControlPanelMode { standalone, miniGame }
+enum ControlPanelMode { standalone, miniGame, storyMode }
 
 class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
   static const ControlPanelMode standalone = ControlPanelMode.standalone;

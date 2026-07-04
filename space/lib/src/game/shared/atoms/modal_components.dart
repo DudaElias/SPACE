@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class GameModalStyle {
   const GameModalStyle({
@@ -41,6 +42,21 @@ class GameModalStyle {
 
   static const GameModalStyle success = GameModalStyle.shared;
 
+  GameModalStyle copyWithInverse() {
+    return GameModalStyle(
+      panelTopColor: panelTopColor,
+      panelBottomColor: panelBottomColor,
+      panelBorderColor: panelBorderColor,
+      panelGlowColor: panelGlowColor,
+      buttonTopColor: const Color(0xFF3A5068),
+      buttonBottomColor: const Color(0xFF243447),
+      buttonPressedTopColor: const Color(0xFF2C3E50),
+      buttonPressedBottomColor: const Color(0xFF1A2530),
+      buttonBorderColor: const Color(0xFF5A7A9A),
+      buttonTextColor: buttonTextColor,
+    );
+  }
+
   static const GameModalStyle danger = GameModalStyle(
     panelTopColor: Color(0xEE33161C),
     panelBottomColor: Color(0xEE170D18),
@@ -54,12 +70,21 @@ class GameModalStyle {
   );
 }
 
-class GameModalBackdrop extends RectangleComponent {
-  GameModalBackdrop({Color color = const Color(0xCC020617)})
+class GameModalBackdrop extends RectangleComponent with TapCallbacks {
+  GameModalBackdrop({Color color = const Color(0xCC020617), this.onBackdropTap})
       : super(paint: Paint()..color = color);
+
+  final VoidCallback? onBackdropTap;
+
+  @override
+  @mustCallSuper
+  void onTapUp(TapUpEvent event) {
+    super.onTapUp(event);
+    onBackdropTap?.call();
+  }
 }
 
-class GameModalShell extends PositionComponent {
+class GameModalShell extends PositionComponent with TapCallbacks {
   GameModalShell({required this.style, required super.size}) : super(anchor: Anchor.center);
 
   final GameModalStyle style;
@@ -110,6 +135,7 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
       position: this.size / 2,
       textRenderer: TextPaint(
         style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
           color: style.buttonTextColor,
           fontSize: 18,
           fontWeight: FontWeight.w700,
