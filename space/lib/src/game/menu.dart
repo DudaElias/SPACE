@@ -31,7 +31,7 @@ class Menu extends Component with HasGameReference<SpaceGame> {
 
     _logo = SpriteComponent(sprite: Sprite(logoImage), size: Vector2(380, 380), anchor: Anchor.center);
     _btnStory = RoundedButton(text: 'Iniciar Missão', action: () { SoundManager.instance.stopBgm(); game.router.pushNamed('story-mode'); }, color: const Color(0xffFF986A));
-    _btnMinigames = RoundedButton(text: 'Mini Jogos', action: () { SoundManager.instance.stopBgm(); game.router.pushNamed('minigame-selector'); }, color: const Color(0xffFF986A));
+    _btnMinigames = RoundedButton(text: 'Mini Jogos', action: () => game.router.pushNamed('minigame-selector'), color: const Color(0xffFF986A));
     _btnRanking = RoundedButton(text: 'Ranking', action: () => game.router.pushNamed('ranking'), color: const Color(0xFF1F3A5F));
     _btnHelp = RoundedButton(text: 'Ajuda', action: _openHelp, color: const Color(0xFF1F3A5F));
     _btnConfig = RoundedButton(text: 'Configurações', action: _openSettings, color: const Color(0xFF1F3A5F));
@@ -89,6 +89,8 @@ class Menu extends Component with HasGameReference<SpaceGame> {
   void _updateStoryButton() {
     if (game.storyChapter > 0 && _btnStory.text == 'Iniciar Missão') {
       _btnStory.setText('Continuar Missão');
+    } else if (game.storyChapter == 0 && _btnStory.text == 'Continuar Missão') {
+      _btnStory.setText('Iniciar Missão');
     }
   }
 
@@ -102,11 +104,11 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     _activeOverlay?.removeFromParent();
     final modal = GameModal(
       title: 'Como Jogar',
-      message: 'Modo História: Acompanhe a Laika em uma aventura pelo Espaço para encontrar seu humano. Passe pelos desafios para avançar na história.\n\nMini Jogos: Pratique os desafios separadamente. Cada jogo fica disponível após ser completado no Modo História.\n\nDesafios:\n- Painel de Controle: memorize a sequência de luzes e repita na ordem certa.\n- Campo de Asteroides: arraste o foguete para desviar dos asteroides e colete ossinhos.\n- Conserto Espacial: em breve!',
+      message: 'Modo História: Acompanhe a Laika em uma aventura pelo espaço para encontrar seu humano. Passe pelos desafios para avançar na história.\n\nMini Jogos: Pratique os desafios separadamente. Cada jogo fica disponível após ser completado no Modo História.\n\nDesafios:\n\n* Painel de Controle:\n  memorize a sequência de luzes e repita na ordem certa.\n\n* Campo de Asteroides:\n  arraste o foguete para desviar dos asteroides e colete petiscos.\n\n* Conserto Espacial:\n  classifique as peças nos cestos corretos para consertar a nave.\n\nDica: O tutorial aparece na primeira vez que você joga cada minijogo. Para revê-lo, ative "Mostrar tutorial" ao iniciar o minijogo pela tela de seleção.',
       buttonText: 'Entendi!',
       onPressed: _closeOverlay,
       onBackdropTap: _closeOverlay,
-      panelSize: Vector2(480, 500),
+      panelSize: Vector2(510, 560),
     );
     _activeOverlay = modal;
     game.setOverlayOpen(true);
@@ -236,6 +238,31 @@ class _SettingsPanel extends PositionComponent {
     )..priority = 102;
 
     addAll([_btnEasy, _btnMedium, _btnHard]);
+
+    final diffDescStyle = TextStyle(
+      fontFamily: GoogleFonts.silkscreen().fontFamily,
+      color: const Color(0xFF94A3B8),
+      fontSize: 11,
+    );
+    final descY = btnY + 30;
+    add(TextComponent(
+      text: 'para começar',
+      anchor: Anchor.topCenter,
+      priority: 102,
+      textRenderer: TextPaint(style: diffDescStyle),
+    )..position = Vector2(cx - btnSpacing, descY));
+    add(TextComponent(
+      text: 'mais rápido',
+      anchor: Anchor.topCenter,
+      priority: 102,
+      textRenderer: TextPaint(style: diffDescStyle),
+    )..position = Vector2(cx, descY));
+    add(TextComponent(
+      text: 'para experts',
+      anchor: Anchor.topCenter,
+      priority: 102,
+      textRenderer: TextPaint(style: diffDescStyle),
+    )..position = Vector2(cx + btnSpacing, descY));
 
     final soundSectionY = btnY + 65;
 

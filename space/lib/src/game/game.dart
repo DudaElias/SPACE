@@ -21,6 +21,8 @@ class SpaceGame extends FlameGame {
   int storyChapter = 0;
   bool storyReturned = false;
   final Set<String> unlockedMinigames = <String>{};
+  final Set<String> completedTutorials = <String>{};
+  bool _pendingSkipTutorial = false;
 
   final ValueNotifier<Color> barColor = ValueNotifier<Color>(const Color(0xFF5D6598));
 
@@ -107,6 +109,22 @@ class SpaceGame extends FlameGame {
     unlockedMinigames.addAll(list);
   }
 
+  Future<void> loadUserTutorials(int userId) async {
+    if (userId == 0) return;
+    final helper = await DatabaseHelper.getInstance();
+    final list = await helper.getCompletedTutorials(userId);
+    completedTutorials.clear();
+    completedTutorials.addAll(list);
+  }
+
+  Future<void> markTutorialComplete(String minigameKey) async {
+    completedTutorials.add(minigameKey);
+    final userId = GameSettings.instance.currentUserId;
+    if (userId == 0) return;
+    final helper = await DatabaseHelper.getInstance();
+    await helper.markTutorialCompleted(userId, minigameKey);
+  }
+
   Future<void> _saveUnlock(String minigame) async {
     final userId = GameSettings.instance.currentUserId;
     if (userId == 0) return;
@@ -115,6 +133,11 @@ class SpaceGame extends FlameGame {
   }
 
   void _popRoute() => router.pop();
+
+  void launchMinigameRoute(String routeName, {required bool skipTutorial}) {
+    _pendingSkipTutorial = skipTutorial;
+    router.pushNamed(routeName);
+  }
 
   void onChallenge1Complete() {
     unlockedMinigames.add('minigame-1');
@@ -178,6 +201,7 @@ class SpaceGame extends FlameGame {
     await images.load('laika.png');
     await images.load('background_history.png');
     await images.load('bone.png');
+    await images.load('tutorial_hand.png');
 
     final pieceNames = [
       'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',
@@ -194,13 +218,14 @@ class SpaceGame extends FlameGame {
         routes: {
           'user-select': Route(UserSelectScreen.new, maintainState: false),
           'home': Route(Menu.new),
-          'story-mode': Route(StoryMode.new, maintainState: true),
+          'story-mode': Route(StoryMode.new, maintainState: false),
           'minigame-selector': Route(MinigameSelector.new, maintainState: false),
           'ranking': Route(RankingScreen.new, maintainState: false),
           'minigame-1': Route(
             () => ControlPanelRoute(
               mode: ControlPanelMode.miniGame,
               onMiniGameFinishExit: onMinigame1Complete,
+              skipTutorial: _pendingSkipTutorial,
             ),
             maintainState: false,
           ),
@@ -209,6 +234,8 @@ class SpaceGame extends FlameGame {
               mode: AsteroidFieldMode.miniGame,
               onMiniGameFinishExit: onMinigame2Complete,
               onBackPressed: _popRoute,
+              skipTutorial: _pendingSkipTutorial,
+              onTutorialComplete: () => markTutorialComplete('minigame-2'),
             ),
             maintainState: false,
           ),
@@ -216,6 +243,7 @@ class SpaceGame extends FlameGame {
             () => BrokenShipRoute(
               mode: BrokenShipMode.miniGame,
               onMiniGameFinishExit: onMinigame3Complete,
+              skipTutorial: _pendingSkipTutorial,
             ),
             maintainState: false,
           ),
@@ -223,6 +251,7 @@ class SpaceGame extends FlameGame {
             () => ControlPanelRoute(
               mode: ControlPanelMode.storyMode,
               onMiniGameFinishExit: onChallenge1Complete,
+              skipTutorial: _pendingSkipTutorial,
             ),
             maintainState: false,
           ),
@@ -231,6 +260,8 @@ class SpaceGame extends FlameGame {
               mode: AsteroidFieldMode.story,
               onMiniGameFinishExit: onChallenge2Complete,
               onBackPressed: _popRoute,
+              skipTutorial: _pendingSkipTutorial,
+              onTutorialComplete: () => markTutorialComplete('minigame-2'),
             ),
             maintainState: false,
           ),
@@ -238,6 +269,7 @@ class SpaceGame extends FlameGame {
             () => BrokenShipRoute(
               mode: BrokenShipMode.story,
               onMiniGameFinishExit: onChallenge3Complete,
+              skipTutorial: _pendingSkipTutorial,
             ),
             maintainState: false,
           )

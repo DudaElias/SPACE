@@ -8,6 +8,8 @@ import 'package:space/src/game/game.dart';
 import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/atoms/button.dart';
 import 'package:space/src/game/shared/molecules/database.dart';
+import 'package:space/src/game/shared/molecules/pre_game_panel.dart';
+import 'package:space/src/game/shared/molecules/game_modal.dart';
 import 'package:space/src/game/shared/settings.dart';
 
 enum _StoryAction { nextOnly, launchMinigame1, launchMinigame2, launchMinigame3, finish }
@@ -136,6 +138,8 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
       laikaInfo: chapter.laikaInfo,
       spaceshipSprite: spaceship,
       bgSprite: bgSprite,
+      chapterIndex: _chapterIndex,
+      totalChapters: _chapters.length,
       onBack: () {
           game.router.pop();
       },
@@ -155,24 +159,42 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
           _buildPage();
         }
       case _StoryAction.launchMinigame1:
-        _setStoryChapter(_chapterIndex + 1);
-        game.storyReturned = false;
-        _awaitingReturn = true;
-        game.router.pushNamed('story-challenge-1');
+        _onMinigameLaunch('minigame-1', 'story-challenge-1', 'Painel de Controle');
       case _StoryAction.launchMinigame2:
-        _setStoryChapter(_chapterIndex + 1);
-        game.storyReturned = false;
-        _awaitingReturn = true;
-        game.router.pushNamed('story-challenge-2');
+        _onMinigameLaunch('minigame-2', 'story-challenge-2', 'Campo de Asteroides');
       case _StoryAction.launchMinigame3:
-        _setStoryChapter(_chapterIndex + 1);
-        game.storyReturned = false;
-        _awaitingReturn = true;
-        game.router.pushNamed('story-challenge-3');
+        _onMinigameLaunch('minigame-3', 'story-challenge-3', 'Conserto Espacial');
       case _StoryAction.finish:
-        _setStoryChapter(0);
-          game.router.pop();
+        _showCongratulations();
     }
+  }
+
+  void _onMinigameLaunch(String minigameKey, String routeName, String title) async {
+    final result = await PreGamePanel.show(
+      _page,
+      title: title,
+      showTutorialDefault: !game.completedTutorials.contains(minigameKey),
+    );
+    if (!result.proceed) return;
+    game.storyReturned = false;
+    _awaitingReturn = true;
+    game.launchMinigameRoute(routeName, skipTutorial: result.skipTutorial);
+  }
+
+  void _showCongratulations() {
+    _setStoryChapter(0);
+    final modal = GameModal(
+      title: 'Parabéns!',
+      message: 'Você completou toda a história!\nLaika e seu humano estão em casa graças a você.\n\nVolte para o menu e pratique os minijogos!',
+      buttonText: 'Voltar ao Menu',
+      onPressed: () {
+        game.router.pop();
+      },
+      style: GameModalStyle.success,
+      panelSize: Vector2(500, 300),
+    );
+    modal.layoutForSize(game.size);
+    _page.add(modal);
   }
 
   @override
@@ -180,6 +202,7 @@ class StoryMode extends Component with HasGameReference<SpaceGame> {
     super.update(dt);
     if (_awaitingReturn && game.storyReturned) {
       _awaitingReturn = false;
+      _setStoryChapter(_chapterIndex + 1);
       _chapterIndex = game.storyChapter;
       if (_chapterIndex >= _chapters.length) {
         _setStoryChapter(0);
@@ -200,6 +223,8 @@ class _StoryPage extends Component with TapCallbacks {
     required this.laikaInfo,
     this.spaceshipSprite,
     this.bgSprite,
+    required this.chapterIndex,
+    required this.totalChapters,
     this.onBack,
   });
 
@@ -210,6 +235,8 @@ class _StoryPage extends Component with TapCallbacks {
   final _LaikaRenderInfo laikaInfo;
   final Sprite? spaceshipSprite;
   final Sprite? bgSprite;
+  final int chapterIndex;
+  final int totalChapters;
   final VoidCallback? onBack;
 
   late final TextComponent _text;
@@ -248,10 +275,27 @@ class _StoryPage extends Component with TapCallbacks {
       text: label,
       action: () => onNext(chapter.action),
       color: const Color(0xffFF986A),
+      size: Vector2(320, 56),
       position: Vector2(gameSize.x / 2, gameSize.y * 0.88),
     );
     _button.priority = 10;
     add(_button);
+
+    final chapterIndicator = TextComponent(
+      text: 'Capítulo ${chapterIndex + 1} / $totalChapters',
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFFFD94D),
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      anchor: Anchor.topCenter,
+      position: Vector2(gameSize.x / 2, gameSize.y * 0.04),
+      priority: 20,
+    );
+    add(chapterIndicator);
 
     if (onBack != null) {
       final backBtn = GameBackButton(

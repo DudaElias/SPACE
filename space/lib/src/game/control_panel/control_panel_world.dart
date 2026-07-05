@@ -10,13 +10,16 @@ import 'control_panel_controller.dart';
 import '../shared/molecules/game_modal.dart';
 import '../shared/settings.dart';
 import '../shared/sound_manager.dart';
+import '../shared/tutorial.dart';
 import 'control_panel_route.dart';
+import '../game.dart';
 
 class ControlPanelWorld extends World {
   ControlPanelWorld({
     ControlPanelController? controller,
     this.mode = ControlPanelMode.standalone,
     this.onMiniGameFinishExit,
+    this.skipTutorial = false,
   })
     : _controller = controller ?? ControlPanelController(maxRounds: _difficultyMaxRounds());
 
@@ -45,15 +48,23 @@ class ControlPanelWorld extends World {
   static const String _statusNext =
     'Ignição parcial pronta! Próxima sequência...';
   static const String _statusWin =
-    'Painel ativado! Decolagem autorizada, heroi canino! Toque para reiniciar.';
+    'Painel ativado! Decolagem autorizada, herói canino!';
   static const String _statusWinClosed =
-    'Painel ativado! Aguardando proxima missão.';
+    'Painel ativado! Aguardando próxima missão.';
   static const String _statusFail =
     'Falha no painel! Toque em qualquer comando para reiniciar.';
 
   final ControlPanelController _controller;
   final ControlPanelMode mode;
   final VoidCallback? onMiniGameFinishExit;
+  final bool skipTutorial;
+  int _consecutiveLosses = 0;
+
+  TutorialOverlay? _tutorialOverlay;
+  bool _tutorialActive = false;
+  int _tutorialDemoStep = 0;
+  double _tutorialDemoTimer = 0;
+  bool _tutorialDemoLit = false;
 
   static const _padKeys = ['pad_a', 'pad_b', 'pad_c', 'pad_d'];
 
@@ -229,10 +240,21 @@ class ControlPanelWorld extends World {
     _layoutForSize(findGame()!.size);
     _setStatus(_statusIntro);
     _updateLevelText();
-    _showIntroDialog();
 
-    _controller.onIncorrect = () => SoundManager.instance.playSfx('incorrect');
-    _controller.onVictory = () => SoundManager.instance.playSfx('success');
+    if (skipTutorial) {
+      _showIntroDialog();
+    } else {
+      _startTutorial();
+    }
+
+    _controller.onIncorrect = () {
+      SoundManager.instance.playSfx('incorrect');
+      _consecutiveLosses++;
+    };
+    _controller.onVictory = () {
+      SoundManager.instance.playSfx('success');
+      _consecutiveLosses = 0;
+    };
   }
 
   void _startFromIntroDialog() {
@@ -262,6 +284,10 @@ class ControlPanelWorld extends World {
     if (_activeDialog != null) {
       _activeDialog!.layoutForSize(findGame()!.size);
     }
+    if (_tutorialOverlay != null) {
+      _updateTutorial(dt);
+    }
+    if (_tutorialActive) return;
     _updatePlayback(dt);
     _updateRoundTimer(dt);
     _updateIntroDelay(dt);
@@ -429,6 +455,11 @@ class ControlPanelWorld extends World {
   }
 
   void _handleButtonPressed(int index) {
+    if (_tutorialActive) {
+      _handleTutorialInput(index);
+      return;
+    }
+
     if (_awaitingStart) {
       _startFromIntroDialog();
       return;
@@ -479,6 +510,7 @@ class ControlPanelWorld extends World {
         _awaitingNextRound = true;
         _nextRoundDelay = _difficultyNextRoundDelay;
       case ControlPanelInputResult.gameWon:
+        _consecutiveLosses = 0;
         _controller.onVictory?.call();
         _updateProgressDots();
         _updateLevelText();
@@ -490,6 +522,10 @@ class ControlPanelWorld extends World {
         _controller.onIncorrect?.call();
         _setStatus(_statusFail);
         _clearButtonHighlights();
+        if (_consecutiveLosses >= 3) {
+          _showLossDialog();
+          return;
+        }
     }
   }
 
@@ -562,11 +598,12 @@ class ControlPanelWorld extends World {
 
   void _showIntroDialog() {
     _showDialog(GameModal(
-      title: 'Sistema S.P.A.C.E.',
+      title: 'Painel de Controle',
       message:
-          'Memorize e repita a sequência de comandos do painel para ligar o foguete e salvar seu melhor amigo humano.',
+          'Observe os comandos que acendem no painel e repita na mesma ordem.\n\nToque nos botões e alavancas na sequência certa para ligar o foguete e salvar seu melhor amigo humano!',
       buttonText: 'Iniciar',
       onPressed: _startFromIntroDialog,
+      panelSize: Vector2(500, 280),
     ));
   }
 
@@ -591,5 +628,109 @@ class ControlPanelWorld extends World {
 
   void _playPadSound(int padIndex) {
     SoundManager.instance.playSfx(_padKeys[padIndex]);
+  }
+
+  void _showLossDialog() {
+    _showDialog(GameModal(
+      title: 'Falha no Painel',
+      message: 'Voc\u00EA errou ${_consecutiveLosses} vezes.\nQuer ver o tutorial novamente?',
+      buttonText: 'Tentar Novamente',
+      onPressed: () {
+        _activeDialog?.removeFromParent();
+        _activeDialog = null;
+        _startGame();
+      },
+      secondaryButtonText: 'Ver Tutorial',
+      onSecondaryPressed: () {
+        _activeDialog?.removeFromParent();
+        _activeDialog = null;
+        _consecutiveLosses = 0;
+        _startTutorial();
+      },
+      onBackdropTap: () {},
+      panelSize: Vector2(480, 260),
+    ));
+  }
+
+  void _startTutorial() {
+    _tutorialActive = true;
+    _consecutiveLosses = 0;
+
+    final game = findGame()! as SpaceGame;
+    final handImage = game.images.fromCache('tutorial_hand.png');
+    final steps = TutorialConfigs.controlPanelSteps(game.size);
+
+    _tutorialOverlay = TutorialOverlay(
+      steps: steps,
+      gameSize: game.size,
+      handImage: handImage,
+      onTutorialComplete: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        game.markTutorialComplete('minigame-1');
+        _showIntroDialog();
+      },
+      onTutorialSkip: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        game.markTutorialComplete('minigame-1');
+        _showIntroDialog();
+      },
+    );
+    add(_tutorialOverlay!);
+  }
+
+  void _handleTutorialInput(int index) {
+    final overlay = _tutorialOverlay;
+    if (overlay == null || !overlay.isShowing) return;
+
+    final step = overlay.currentStep;
+
+    if (step.action == TutorialAction.tapAnyButton) {
+      overlay.advance();
+      return;
+    }
+
+    if (step.action == TutorialAction.tapSpecificButton) {
+      if (step.padIndex == index) {
+        _playPadSound(index);
+        overlay.advance();
+      }
+      return;
+    }
+  }
+
+  void _updateTutorial(double dt) {
+    final overlay = _tutorialOverlay;
+    if (overlay == null || !overlay.isShowing) return;
+
+    if (overlay.currentStepIndex == 1) {
+      _runTutorialDemo(dt);
+    }
+  }
+
+  void _runTutorialDemo(double dt) {
+    _tutorialDemoTimer -= dt;
+    if (_tutorialDemoTimer > 0) return;
+
+    if (!_tutorialDemoLit) {
+      if (_tutorialDemoStep >= 1) {
+        _clearButtonHighlights();
+        return;
+      }
+      final padIndex = _tutorialDemoStep;
+      _setButtonHighlight(padIndex, true);
+      _playPadSound(padIndex);
+      _tutorialDemoLit = true;
+      _tutorialDemoTimer = _lightDurationSeconds;
+      return;
+    }
+
+    _clearButtonHighlights();
+    _tutorialDemoStep++;
+    _tutorialDemoLit = false;
+    _tutorialDemoTimer = _gapDurationSeconds;
   }
 }

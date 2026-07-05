@@ -37,7 +37,7 @@ class DatabaseHelper {
 
     _db = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -47,6 +47,9 @@ class DatabaseHelper {
     if (oldVersion < 2) {
       await db.execute("ALTER TABLE users ADD COLUMN unlocked_minigames TEXT DEFAULT ''");
     }
+    if (oldVersion < 3) {
+      await db.execute("ALTER TABLE users ADD COLUMN tutorials_completed TEXT DEFAULT ''");
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -55,7 +58,8 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         story_progress INTEGER DEFAULT 0,
-        unlocked_minigames TEXT DEFAULT ''
+        unlocked_minigames TEXT DEFAULT '',
+        tutorials_completed TEXT DEFAULT ''
       )
     ''');
 
@@ -80,6 +84,12 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> getUsers() async {
     return _db!.query('users');
+  }
+
+  Future<int> getUserStoryProgress(int userId) async {
+    final rows = await _db!.query('users', columns: ['story_progress'], where: 'id = ?', whereArgs: [userId]);
+    if (rows.isEmpty) return 0;
+    return rows.first['story_progress'] as int? ?? 0;
   }
 
   Future<void> updateStoryProgress(int userId, int progress) async {
@@ -132,5 +142,20 @@ class DatabaseHelper {
     if (current.contains(minigameId)) return;
     current.add(minigameId);
     await _db!.update('users', {'unlocked_minigames': current.join(',')}, where: 'id = ?', whereArgs: [userId]);
+  }
+
+  Future<List<String>> getCompletedTutorials(int userId) async {
+    final rows = await _db!.query('users', columns: ['tutorials_completed'], where: 'id = ?', whereArgs: [userId]);
+    if (rows.isEmpty) return [];
+    final raw = rows.first['tutorials_completed'] as String?;
+    if (raw == null || raw.isEmpty) return [];
+    return raw.split(',');
+  }
+
+  Future<void> markTutorialCompleted(int userId, String minigameKey) async {
+    final current = await getCompletedTutorials(userId);
+    if (current.contains(minigameKey)) return;
+    current.add(minigameKey);
+    await _db!.update('users', {'tutorials_completed': current.join(',')}, where: 'id = ?', whereArgs: [userId]);
   }
 }

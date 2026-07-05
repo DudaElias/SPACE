@@ -15,10 +15,12 @@ class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
   BrokenShipRoute({
     this.mode = BrokenShipMode.standalone,
     this.onMiniGameFinishExit,
+    this.skipTutorial = false,
   });
 
   final BrokenShipMode mode;
   final VoidCallback? onMiniGameFinishExit;
+  final bool skipTutorial;
 
   late final BrokenShipWorld _world;
   late final CameraComponent _camera;
@@ -30,6 +32,7 @@ class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
     _world = BrokenShipWorld(
       mode: mode,
       onMiniGameFinishExit: onMiniGameFinishExit,
+      skipTutorial: skipTutorial,
     );
     // Add the world as a child so it participates in the lifecycle and layout
     await add(_world);

@@ -9,6 +9,7 @@ import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/molecules/game_modal.dart';
 import 'package:space/src/game/shared/settings.dart';
 import 'package:space/src/game/shared/sound_manager.dart';
+import 'package:space/src/game/shared/tutorial.dart';
 import 'components/asteroid_field_components.dart';
 
 enum AsteroidFieldPhase { waiting, playing, gameOver }
@@ -19,13 +20,19 @@ class AsteroidField extends FlameGame
   final AsteroidFieldMode mode;
   final VoidCallback? onMiniGameFinishExit;
   final VoidCallback? onBackPressed;
+  final bool skipTutorial;
+  final VoidCallback? onTutorialComplete;
+  int _consecutiveLosses = 0;
+
+  TutorialOverlay? _tutorialOverlay;
+  bool _tutorialActive = false;
 
   late RocketPlayer player;
   late TextComponent statusText;
   late TextComponent petiscoText;
   late GameModal introModal;
   late GameModal finishModal;
-  late GameModal lossModal;
+  GameModal? _lossModal;
   late GameBackButton backButton;
 
   final Random random = Random();
@@ -58,10 +65,14 @@ class AsteroidField extends FlameGame
   late RectangleComponent progressFill;
   late SpriteComponent progressShip;
 
+  PositionComponent? _dragHint;
+
   AsteroidField({
     this.mode = AsteroidFieldMode.standalone,
     this.onMiniGameFinishExit,
     this.onBackPressed,
+    this.skipTutorial = false,
+    this.onTutorialComplete,
   });
 
   @override
@@ -136,7 +147,6 @@ class AsteroidField extends FlameGame
       onPressed: _startFromIntroModal,
     );
     introModal.priority = 100;
-    add(introModal);
 
     finishModal = GameModal(
       onPressed: onFinishContinue,
@@ -150,18 +160,6 @@ class AsteroidField extends FlameGame
     );
     finishModal.priority = 100;
 
-    lossModal = GameModal(
-      onPressed: resetToStart,
-      style: GameModalStyle.danger,
-      title: 'Missão Falhou',
-      message: 'Seu foguete foi danificado.\nTente novamente a partir do início.',
-      buttonText: 'Tentar Novamente',
-      titleColor: const Color(0xFFFFD8D2),
-      messageColor: const Color(0xFFF0BFB7),
-      panelSize: Vector2(480, 260),
-    );
-    lossModal.priority = 100;
-
     backButton = GameBackButton(
       onPressed: onBackPressed ?? onFinishContinue,
       position: Vector2(24, 24),
@@ -169,6 +167,17 @@ class AsteroidField extends FlameGame
       size: Vector2.all(40),
     );
     camera.viewport.add(backButton);
+
+    if (!skipTutorial) {
+      await images.load('tutorial_hand.png');
+    }
+
+    if (skipTutorial) {
+      add(introModal);
+      introModal.layoutForSize(size);
+    } else {
+      _startTutorial();
+    }
   }
 
   @override
@@ -188,8 +197,8 @@ class AsteroidField extends FlameGame
         finishModal.layoutForSize(canvasSize);
       }
 
-      if (lossModal.isMounted) {
-        lossModal.layoutForSize(canvasSize);
+      if (_lossModal?.isMounted == true) {
+        _lossModal!.layoutForSize(canvasSize);
       }
     }
   }
@@ -224,21 +233,9 @@ class AsteroidField extends FlameGame
     }
   }
 
-  void showLossModal() {
-    lossModal.configure(
-      message: 'Seu foguete foi danificado.\nTente novamente a partir do início.',
-      buttonText: 'Tentar Novamente',
-    );
-    if (!lossModal.isMounted) {
-      lossModal.layoutForSize(size);
-      add(lossModal);
-    }
-  }
-
   void hideLossModal() {
-    if (lossModal.isMounted) {
-      lossModal.removeFromParent();
-    }
+    _lossModal?.removeFromParent();
+    _lossModal = null;
   }
 
   void onFinishContinue() {
@@ -259,6 +256,10 @@ class AsteroidField extends FlameGame
 
     phase = AsteroidFieldPhase.playing;
     statusText.removeFromParent();
+
+    _dragHint?.removeFromParent();
+    _dragHint = _AsteroidDragHint(player: player);
+    add(_dragHint!);
   }
 
   void _startFromIntroModal() {
@@ -302,6 +303,8 @@ class AsteroidField extends FlameGame
     distanceTravelled = 0;
     progressFill.size.x = 0;
     progressShip.position = Vector2(0, progressBg.size.y / 2);
+
+    _removeDragHint();
   }
 
   void triggerGameOver() {
@@ -309,6 +312,7 @@ class AsteroidField extends FlameGame
       return;
     }
 
+    _consecutiveLosses++;
     SoundManager.instance.playSfx('asteroid_hit');
     SoundManager.instance.stopBgm();
 
@@ -323,10 +327,43 @@ class AsteroidField extends FlameGame
           )
           .toList(),
     );
-    statusText.text = 'Game over';
+    statusText.text = 'Fim de Jogo';
     statusText.position = size / 2;
     hideFinishModal();
-    showLossModal();
+    _showLossModal();
+  }
+
+  void _showLossModal() {
+    hideLossModal();
+    final showTutorial = _consecutiveLosses >= 3;
+    _lossModal = GameModal(
+      onPressed: () {
+        hideLossModal();
+        resetToStart();
+      },
+      style: GameModalStyle.danger,
+      title: 'Missao Falhou',
+      message: showTutorial
+          ? 'Seu foguete foi danificado.\nQuer ver o tutorial novamente?'
+          : 'Seu foguete foi danificado.\nTente novamente a partir do inicio.',
+      buttonText: 'Tentar Novamente',
+      titleColor: const Color(0xFFFFD8D2),
+      messageColor: const Color(0xFFF0BFB7),
+      panelSize: Vector2(480, 260),
+    );
+    if (showTutorial) {
+      _lossModal!.configure(
+        secondaryButtonText: 'Ver Tutorial',
+        onSecondaryPressed: () {
+          hideLossModal();
+          _consecutiveLosses = 0;
+          _startTutorial();
+        },
+      );
+    }
+    _lossModal!.priority = 100;
+    _lossModal!.layoutForSize(size);
+    add(_lossModal!);
   }
 
   void triggerFinish() {
@@ -334,6 +371,7 @@ class AsteroidField extends FlameGame
       return;
     }
 
+    _consecutiveLosses = 0;
     SoundManager.instance.playSfx('success');
     SoundManager.instance.stopBgm();
 
@@ -346,11 +384,26 @@ class AsteroidField extends FlameGame
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
+    if (_tutorialActive && _tutorialOverlay != null) {
+      final step = _tutorialOverlay!.currentStep;
+      if (step.action == TutorialAction.dragAnywhere) {
+        _tutorialOverlay!.advance();
+      }
+      return;
+    }
+
     if (phase != AsteroidFieldPhase.playing) {
       return;
     }
 
+    _removeDragHint();
+
     player.followTouch(event.canvasEndPosition);
+  }
+
+  void _removeDragHint() {
+    _dragHint?.removeFromParent();
+    _dragHint = null;
   }
 
   @override
@@ -368,6 +421,8 @@ class AsteroidField extends FlameGame
   @override
   void update(double dt) {
     super.update(dt);
+
+    if (_tutorialActive) return;
 
     if (phase != AsteroidFieldPhase.playing) {
       return;
@@ -490,5 +545,90 @@ class AsteroidField extends FlameGame
     petiscosCollected += 1;
     petiscoText.text = 'Petiscos: $petiscosCollected';
     petisco.removeFromParent();
+  }
+
+  void _startTutorial() {
+    _tutorialActive = true;
+
+    final handImage = images.fromCache('tutorial_hand.png');
+    final steps = TutorialConfigs.asteroidFieldSteps(size);
+
+    _tutorialOverlay = TutorialOverlay(
+      steps: steps,
+      gameSize: size,
+      handImage: handImage,
+      onTutorialComplete: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        onTutorialComplete?.call();
+        add(introModal);
+        introModal.layoutForSize(size);
+      },
+      onTutorialSkip: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        onTutorialComplete?.call();
+        add(introModal);
+        introModal.layoutForSize(size);
+      },
+    );
+    add(_tutorialOverlay!);
+  }
+}
+
+class _AsteroidDragHint extends PositionComponent {
+  _AsteroidDragHint({required this.player}) : super(priority: 20, size: Vector2(80, 120));
+
+  final RocketPlayer player;
+  double _timer = 0;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _timer += dt;
+    final gameSize = findGame()!.size;
+    position = Vector2(
+      player.position.x + 50,
+      player.position.y,
+    );
+    position.x = position.x.clamp(20, gameSize.x - size.x - 20);
+    position.y = position.y.clamp(size.y / 2 + 20, gameSize.y - size.y / 2 - 20);
+  }
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final phase = (_timer % 1.4) / 1.4;
+    final alpha = (phase < 0.5 ? phase * 2 : (1.0 - (phase - 0.5) * 2)) * 0.6;
+
+    final arrowPaint = Paint()
+      ..color = const Color(0xFF62D5FF).withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    canvas.drawLine(Offset(cx, size.y * 0.8), Offset(cx, size.y * 0.2), arrowPaint);
+
+    final tipPaint = Paint()
+      ..color = const Color(0xFF62D5FF).withValues(alpha: alpha)
+      ..style = PaintingStyle.fill;
+
+    final upPath = Path()
+      ..moveTo(cx, size.y * 0.15)
+      ..lineTo(cx - 8, size.y * 0.3)
+      ..lineTo(cx + 8, size.y * 0.3)
+      ..close();
+    canvas.drawPath(upPath, tipPaint);
+
+    final downPath = Path()
+      ..moveTo(cx, size.y * 0.85)
+      ..lineTo(cx - 8, size.y * 0.7)
+      ..lineTo(cx + 8, size.y * 0.7)
+      ..close();
+    canvas.drawPath(downPath, tipPaint);
+
+    final handPaint = Paint()..color = Colors.white.withValues(alpha: alpha * 1.2);
+    canvas.drawCircle(Offset(cx, size.y / 2), 6, handPaint);
   }
 }

@@ -115,9 +115,9 @@ class RankingScreen extends Component with HasGameReference<SpaceGame>, TapCallb
   }
 
   String _difficultyLabel(String? d) {
-    if (d == 'easy') return 'Facil';
-    if (d == 'medium') return 'Medio';
-    return 'Dificil';
+    if (d == 'easy') return 'Fácil';
+    if (d == 'medium') return 'Médio';
+    return 'Difícil';
   }
 
   String _formatDate(String? iso) {

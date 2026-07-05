@@ -15,10 +15,12 @@ class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
   ControlPanelRoute({
     this.mode = ControlPanelMode.standalone,
     this.onMiniGameFinishExit,
+    this.skipTutorial = false,
   });
 
   final ControlPanelMode mode;
   final VoidCallback? onMiniGameFinishExit;
+  final bool skipTutorial;
 
   late final ControlPanelWorld _world;
   late final CameraComponent _camera;
@@ -30,6 +32,7 @@ class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
     _world = ControlPanelWorld(
       mode: mode,
       onMiniGameFinishExit: onMiniGameFinishExit,
+      skipTutorial: skipTutorial,
     );
     // Add the world as a child so it participates in the lifecycle and layout
     await add(_world);

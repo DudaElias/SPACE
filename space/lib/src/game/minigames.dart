@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:space/src/game/shared/atoms/back_button.dart'
     show SimpleBackButton;
 import 'package:space/src/game/shared/atoms/game_card.dart';
+import 'package:space/src/game/shared/molecules/pre_game_panel.dart';
 import 'package:space/src/game/game.dart';
 
 class MinigameSelector extends Component with HasGameReference<SpaceGame> {
@@ -37,7 +38,7 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
     );
     final minigames = <({String title, String routeName})>[
       (title: 'Painel de Controle', routeName: 'minigame-1'),
-      (title: 'Campo de Asteróides', routeName: 'minigame-2'),
+      (title: 'Campo de Asteroides', routeName: 'minigame-2'),
       (title: 'Conserto Espacial', routeName: 'minigame-3'),
     ];
 
@@ -51,7 +52,17 @@ class MinigameSelector extends Component with HasGameReference<SpaceGame> {
           imageAssetPath: 'game_${col + 1}.png',
           title: unlocked ? minigame.title : '???',
           position: position,
-          onTap: () => game.router.pushNamed(minigame.routeName),
+          onTap: () async {
+            if (!unlocked) return;
+            final result = await PreGamePanel.show(
+              this,
+              title: minigame.title,
+              showTutorialDefault: !game.completedTutorials.contains(minigame.routeName),
+            );
+            if (result.proceed) {
+              game.launchMinigameRoute(minigame.routeName, skipTutorial: result.skipTutorial);
+            }
+          },
           isLocked: !unlocked,
         ),
       );

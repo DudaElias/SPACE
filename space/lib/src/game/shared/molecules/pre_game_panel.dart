@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -32,10 +31,11 @@ class PreGamePanel extends PositionComponent with TapCallbacks {
   bool _tutorialEnabled = false;
 
   static Future<PreGameResult> show(
-    FlameGame game, {
+    Component parent, {
     required String title,
     required bool showTutorialDefault,
   }) {
+    final game = parent.findGame()!;
     final completer = Completer<PreGameResult>();
     final panel = PreGamePanel._(
       title: title,
@@ -44,7 +44,7 @@ class PreGamePanel extends PositionComponent with TapCallbacks {
       completer: completer,
     );
     panel._tutorialEnabled = showTutorialDefault;
-    game.world.add(panel);
+    parent.add(panel);
     return completer.future;
   }
 
@@ -110,7 +110,7 @@ class PreGamePanel extends PositionComponent with TapCallbacks {
     const btnSpacing = 135.0;
 
     final btnEasy = _PreGameDiffButton(
-      label: 'Facil',
+      label: 'Fácil',
       selected: diff.difficulty == GameSettings.easy,
       position: Vector2(cx - btnSpacing, btnY),
       onTap: () {
@@ -119,7 +119,7 @@ class PreGamePanel extends PositionComponent with TapCallbacks {
       },
     )..priority = 2;
     final btnMedium = _PreGameDiffButton(
-      label: 'Medio',
+      label: 'Médio',
       selected: diff.difficulty == GameSettings.medium,
       position: Vector2(cx, btnY),
       onTap: () {
@@ -128,7 +128,7 @@ class PreGamePanel extends PositionComponent with TapCallbacks {
       },
     )..priority = 2;
     final btnHard = _PreGameDiffButton(
-      label: 'Dificil',
+      label: 'Difícil',
       selected: diff.difficulty == GameSettings.hard,
       position: Vector2(cx + btnSpacing, btnY),
       onTap: () {
@@ -313,7 +313,7 @@ class _PreGameTutorialToggle extends PositionComponent with TapCallbacks {
 
     final stateTp = TextPainter(
       text: TextSpan(
-        text: _enabled ? 'ON' : 'OFF',
+        text: _enabled ? 'LIG' : 'DESL',
         style: TextStyle(
           fontFamily: GoogleFonts.silkscreen().fontFamily,
           color: Colors.white,
@@ -337,7 +337,7 @@ class _PreGameTutorialToggle extends PositionComponent with TapCallbacks {
       textDirection: TextDirection.ltr,
     )..layout();
     if (_enabled) {
-      hintTp.paint(canvas, Offset(0, size.y / 2 + 2));
+      hintTp.paint(canvas, Offset(0, size.y / 2 + 6));
     }
   }
 

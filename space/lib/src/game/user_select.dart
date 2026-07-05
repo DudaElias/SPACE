@@ -138,9 +138,20 @@ class UserSelectScreen extends Component with HasGameReference<SpaceGame> {
     _activeModal?.removeFromParent();
     _activeModal = null;
     GameSettings.instance.currentUserId = id;
-    game.loadUserUnlocks(id).whenComplete(() {
+    game.loadUserUnlocks(id);
+    game.loadUserTutorials(id);
+    _loadStoryProgress(id).whenComplete(() {
       game.router.pushNamed('home');
     });
+  }
+
+  Future<void> _loadStoryProgress(int userId) async {
+    try {
+      final helper = await DatabaseHelper.getInstance();
+      game.storyChapter = await helper.getUserStoryProgress(userId);
+    } catch (_) {
+      game.storyChapter = 0;
+    }
   }
 
   Future<void> _newUser() async {

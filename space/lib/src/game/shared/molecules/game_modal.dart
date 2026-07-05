@@ -127,7 +127,9 @@ class GameModal extends PositionComponent {
     _pendingLayoutSize = null;
   }
 
-  void configure({String? title, String? message, String? buttonText}) {
+  VoidCallback? _onSecondaryCallback;
+
+  void configure({String? title, String? message, String? buttonText, String? secondaryButtonText, VoidCallback? onSecondaryPressed}) {
     if (!_uiReady) return;
     final game = findGame();
     if (title != null) _titleText.text = title;
@@ -138,5 +140,26 @@ class GameModal extends PositionComponent {
       }
     }
     if (buttonText != null) _button.setLabel(buttonText);
+
+    _onSecondaryCallback = onSecondaryPressed;
+    if (secondaryButtonText != null && onSecondaryPressed != null) {
+      if (_secondaryButton == null) {
+        _secondaryButton = GameModalActionButton(
+          label: secondaryButtonText,
+          onPressed: () => _onSecondaryCallback?.call(),
+          style: style.copyWithInverse(),
+          size: Vector2(180, 48),
+        )..priority = 102;
+        add(_secondaryButton!);
+      } else {
+        _secondaryButton!.setLabel(secondaryButtonText);
+      }
+      if (game != null) _applyLayout(game.size);
+    } else if (_secondaryButton != null) {
+      _secondaryButton!.removeFromParent();
+      _secondaryButton = null;
+      _onSecondaryCallback = null;
+      if (game != null) _applyLayout(game.size);
+    }
   }
 }

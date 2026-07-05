@@ -1,10 +1,13 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../shared/molecules/game_modal.dart';
 import '../shared/settings.dart';
 import '../shared/sound_manager.dart';
+import '../shared/tutorial.dart';
+import '../game.dart';
 import 'broken_ship_controller.dart';
 import 'broken_ship_route.dart';
 import 'components/broken_ship_backdrop.dart';
@@ -14,14 +17,21 @@ import 'components/repair_meter.dart';
 import 'components/rule_indicator.dart';
 import 'components/sorting_object.dart';
 
-class BrokenShipWorld extends World with DragCallbacks {
+class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
   BrokenShipWorld({
     this.mode = BrokenShipMode.standalone,
     this.onMiniGameFinishExit,
+    this.skipTutorial = false,
   });
 
   final BrokenShipMode mode;
   final VoidCallback? onMiniGameFinishExit;
+  final bool skipTutorial;
+
+  TutorialOverlay? _tutorialOverlay;
+  bool _tutorialActive = false;
+  int _missStreak = 0;
+  TextComponent? _helpBanner;
 
   late final BrokenShipController _controller;
   late final BrokenShipBackdrop _backdrop;
@@ -30,6 +40,8 @@ class BrokenShipWorld extends World with DragCallbacks {
   late final ComboDisplay _comboDisplay;
   late final CollectionBin _leftBin;
   late final CollectionBin _rightBin;
+
+  _DragHint? _dragHint;
 
   SortingObject? _currentObject;
   bool _objectAnimating = false;
@@ -66,7 +78,8 @@ class BrokenShipWorld extends World with DragCallbacks {
   static const String _introMessage =
       'Classifique as pe\u00e7as para consertar a nave!\n'
       'Arraste para esquerda ou direita conforme a regra.\n'
-      'Aten\u00e7\u00e3o: as regras v\u00e3o mudar!';
+      'Aten\u00e7\u00e3o: as regras v\u00e3o mudar!\n'
+      'Respostas certas seguidas valem mais pontos!';
   static const String _introButton = 'Iniciar';
 
   static const String _victoryTitle = 'Nave Consertada!';
@@ -116,7 +129,11 @@ class BrokenShipWorld extends World with DragCallbacks {
 
     _layoutForSize(findGame()!.size);
 
-    _showIntroModal();
+    if (skipTutorial) {
+      _showIntroModal();
+    } else {
+      _startTutorial();
+    }
   }
 
   void _layoutForSize(Vector2 size) {
@@ -149,6 +166,14 @@ class BrokenShipWorld extends World with DragCallbacks {
     _repairMeter.layoutInternals();
     _leftBin.layoutInternals();
     _rightBin.layoutInternals();
+
+    _layoutDragHint();
+  }
+
+  void _layoutDragHint() {
+    if (_dragHint == null || !_dragHint!.isMounted) return;
+    _dragHint!.position = Vector2(0, 0);
+    _dragHint!.size = findGame()!.size;
   }
 
   @override
@@ -181,6 +206,8 @@ class BrokenShipWorld extends World with DragCallbacks {
     if (_activeModal != null) {
       _activeModal!.layoutForSize(findGame()!.size);
     }
+
+    if (_tutorialActive) return;
 
     if (!_gameStarted) return;
 
@@ -250,6 +277,11 @@ class BrokenShipWorld extends World with DragCallbacks {
     _refreshRuleUI();
     _repairMeter.setProgress(0);
     _comboDisplay.reset();
+
+    _dragHint?.removeFromParent();
+    _dragHint = _DragHint();
+    add(_dragHint!);
+    _layoutDragHint();
   }
 
   void _refreshRuleUI() {
@@ -298,10 +330,14 @@ class BrokenShipWorld extends World with DragCallbacks {
     if (_objectAnimating || _currentObject == null) return;
     _objectAnimating = true;
 
+    _removeDragHint();
+
     final result = _controller.evaluateSort(side);
 
     switch (result) {
       case SortingResult.correct:
+        _missStreak = 0;
+        _hideHelpBanner();
         _controller.handleCorrect();
         _controller.onCorrect?.call();
         _repairMeter.setProgress(_controller.repairPercent);
@@ -319,6 +355,7 @@ class BrokenShipWorld extends World with DragCallbacks {
         break;
 
       case SortingResult.incorrect:
+        _missStreak++;
         _controller.handleIncorrect();
         _controller.onIncorrect?.call();
         _comboDisplay.setCombo(_controller.comboCount);
@@ -327,6 +364,10 @@ class BrokenShipWorld extends World with DragCallbacks {
           _leftBin.flashIncorrect();
         } else {
           _rightBin.flashIncorrect();
+        }
+
+        if (_missStreak >= 8) {
+          _showHelpBanner();
         }
 
         final binTopY = side == BinSide.left
@@ -342,6 +383,7 @@ class BrokenShipWorld extends World with DragCallbacks {
         break;
 
       case SortingResult.missed:
+        _missStreak++;
         _objectAnimating = false;
         break;
     }
@@ -351,6 +393,8 @@ class BrokenShipWorld extends World with DragCallbacks {
     _controller.handleMissed();
     _controller.onMiss?.call();
     _comboDisplay.setCombo(_controller.comboCount);
+
+    _removeDragHint();
 
     _currentObject?.animateFallAway(() {
       _currentObject?.removeFromParent();
@@ -394,7 +438,7 @@ class BrokenShipWorld extends World with DragCallbacks {
         _startGame();
       },
       style: GameModalStyle.shared,
-      panelSize: Vector2(500, 300),
+      panelSize: Vector2(500, 330),
     );
     add(_activeModal!);
     _activeModal!.layoutForSize(findGame()!.size);
@@ -420,6 +464,13 @@ class BrokenShipWorld extends World with DragCallbacks {
 
   @override
   bool containsLocalPoint(Vector2 point) {
+    if (_tutorialActive) {
+      final gameSize = findGame()!.size;
+      return point.x >= 0 &&
+          point.x < gameSize.x &&
+          point.y >= gameSize.y * 0.1 &&
+          point.y < gameSize.y * 0.9;
+    }
     if (!_gameStarted ||
         _currentObject == null ||
         _currentObject!.isAnimating ||
@@ -461,6 +512,11 @@ class BrokenShipWorld extends World with DragCallbacks {
 
     if (_currentObject!.isAnimating || _objectAnimating) return;
 
+    if (_tutorialActive && _tutorialOverlay != null) {
+      _handleTutorialDragEnd();
+      return;
+    }
+
     final objX = _currentObject!.position.x;
     final tubeLeftX = findGame()!.size.x * 0.28;
     final tubeRightX = findGame()!.size.x * 0.72;
@@ -482,5 +538,187 @@ class BrokenShipWorld extends World with DragCallbacks {
     if (_currentObject != null) {
       _currentObject!.isBeingDragged = false;
     }
+  }
+
+  @override
+  void onTapUp(TapUpEvent event) {
+    if (_helpBanner != null && _helpBanner!.isMounted) {
+      _hideHelpBanner();
+      _missStreak = 0;
+      _startTutorial();
+      return;
+    }
+  }
+
+  void _removeDragHint() {
+    _dragHint?.removeFromParent();
+    _dragHint = null;
+  }
+
+  void _handleTutorialDragEnd() {
+    final step = _tutorialOverlay!.currentStep;
+    final objX = _currentObject!.position.x;
+    final tubeLeftX = findGame()!.size.x * 0.28;
+    final tubeRightX = findGame()!.size.x * 0.72;
+
+    if (step.action == TutorialAction.dragToLeft && objX < tubeLeftX) {
+      _playTutorialCorrectDrop((_) => _tutorialOverlay!.advance());
+    } else if (step.action == TutorialAction.dragToRight && objX > tubeRightX) {
+      _playTutorialCorrectDrop((_) => _tutorialOverlay!.advance());
+    } else {
+      final centerX = findGame()!.size.x * 0.5;
+      _currentObject?.snapToCenter(centerX);
+    }
+  }
+
+  void _playTutorialCorrectDrop(void Function(SortingObject) onComplete) {
+    if (_currentObject == null) return;
+    _objectAnimating = true;
+    final obj = _currentObject!;
+    final targetBin = _tutorialOverlay!.currentStep.action == TutorialAction.dragToLeft
+        ? _leftBin : _rightBin;
+    (obj.position.x < findGame()!.size.x * 0.5 ? _leftBin : _rightBin).flashCorrect();
+    SoundManager.instance.playSfx('correct');
+    obj.animateToBin(targetBin.position, () {
+      obj.removeFromParent();
+      _currentObject = null;
+      _objectAnimating = false;
+      onComplete(obj);
+    });
+  }
+
+  void _startTutorial() {
+    _tutorialActive = true;
+
+    final game = findGame()! as SpaceGame;
+    final handImage = game.images.fromCache('tutorial_hand.png');
+    final steps = TutorialConfigs.brokenShipSteps(game.size);
+
+    _tutorialOverlay = TutorialOverlay(
+      steps: steps,
+      gameSize: game.size,
+      handImage: handImage,
+      onTutorialComplete: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        _removeTutorialPiece();
+        game.markTutorialComplete('minigame-3');
+        _showIntroModal();
+      },
+      onTutorialSkip: () {
+        _tutorialOverlay?.removeFromParent();
+        _tutorialOverlay = null;
+        _tutorialActive = false;
+        _removeTutorialPiece();
+        game.markTutorialComplete('minigame-3');
+        _showIntroModal();
+      },
+    );
+    add(_tutorialOverlay!);
+
+    _spawnTutorialPiece();
+  }
+
+  void _spawnTutorialPiece() {
+    final piece = _controller.generateNextPiece();
+    final size = findGame()!.size;
+    final spawnX = size.x * 0.5;
+    final spawnY = size.y * 0.35;
+    _currentObject = SortingObject(piece: piece, fallSpeed: 0)
+      ..position = Vector2(spawnX, spawnY);
+    add(_currentObject!);
+  }
+
+  void _removeTutorialPiece() {
+    _currentObject?.removeFromParent();
+    _currentObject = null;
+  }
+
+  void _showHelpBanner() {
+    if (_helpBanner != null && _helpBanner!.isMounted) return;
+    final size = findGame()!.size;
+    _helpBanner = TextComponent(
+      text: 'Precisa de ajuda? Toque aqui!',
+      anchor: Anchor.topCenter,
+      position: Vector2(size.x / 2, size.y * 0.02),
+      priority: 50,
+      textRenderer: TextPaint(
+        style: TextStyle(
+          fontFamily: GoogleFonts.silkscreen().fontFamily,
+          color: const Color(0xFFFFF176),
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+    add(_helpBanner!);
+  }
+
+  void _hideHelpBanner() {
+    _helpBanner?.removeFromParent();
+    _helpBanner = null;
+  }
+}
+
+class _DragHint extends PositionComponent {
+  _DragHint() : super(priority: 20);
+
+  double _timer = 0;
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _timer += dt;
+  }
+
+  @override
+  void render(Canvas canvas) {
+    final gameSize = findGame()!.size;
+    final cx = gameSize.x * 0.5;
+    final cy = gameSize.y * 0.45;
+    final tubeLeftX = gameSize.x * 0.28;
+    final tubeRightX = gameSize.x * 0.72;
+
+    final phase = (_timer % 1.6) / 1.6;
+    final leftAlpha = (phase < 0.5 ? phase * 2 : (1.0 - (phase - 0.5) * 2)) * 0.6;
+    final rightAlpha = phase >= 0.5
+        ? ((phase - 0.5) < 0.5 ? (phase - 0.5) * 2 : (1.0 - (phase - 0.75) * 2)) * 0.6
+        : 0.0;
+
+    final arrowPaint = Paint()
+      ..color = const Color(0xFF62D5FF)
+      ..style = PaintingStyle.fill;
+
+    _drawArrow(canvas, cx, cy, tubeLeftX - 30, leftAlpha, true, arrowPaint);
+    _drawArrow(canvas, cx, cy, tubeRightX + 30, rightAlpha, false, arrowPaint);
+
+    final handPaint = Paint()..color = Colors.white.withValues(alpha: 0.5);
+    canvas.drawCircle(Offset(cx, cy), 8, handPaint);
+  }
+
+  void _drawArrow(Canvas canvas, double fromX, double y, double toX, double alpha, bool left, Paint arrowPaint) {
+    if (alpha <= 0) return;
+    arrowPaint.color = const Color(0xFF62D5FF).withValues(alpha: alpha);
+    final midX = (fromX + toX) / 2;
+
+    canvas.drawLine(Offset(fromX + (left ? -40 : 40), y), Offset(midX, y), arrowPaint..strokeWidth = 3);
+    canvas.drawLine(Offset(midX, y), Offset(toX, y), arrowPaint..strokeWidth = 3);
+
+    final tipPaint = Paint()
+      ..color = const Color(0xFF62D5FF).withValues(alpha: alpha)
+      ..style = PaintingStyle.fill;
+    final path = Path();
+    if (left) {
+      path.moveTo(toX, y);
+      path.lineTo(toX + 8, y - 6);
+      path.lineTo(toX + 8, y + 6);
+    } else {
+      path.moveTo(toX, y);
+      path.lineTo(toX - 8, y - 6);
+      path.lineTo(toX - 8, y + 6);
+    }
+    path.close();
+    canvas.drawPath(path, tipPaint);
   }
 }
