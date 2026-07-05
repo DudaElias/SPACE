@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:space/src/game/game.dart';
+import 'package:space/src/game/shared/sound_manager.dart';
 
 class GameBackButton extends PositionComponent with TapCallbacks {
   GameBackButton({required this.onPressed, super.position, super.anchor, super.size})
@@ -40,6 +41,7 @@ class GameBackButton extends PositionComponent with TapCallbacks {
   @override
   void onTapUp(TapUpEvent event) {
     _iconPaint.color = const Color.fromARGB(255, 207, 207, 207);
+    SoundManager.instance.playSfx('ui_click');
     onPressed();
   }
 
@@ -89,6 +91,7 @@ class SimpleBackButton extends PositionComponent with HasGameReference<SpaceGame
   @override
   void onTapUp(TapUpEvent event) {
     _iconPaint.color = const Color.fromARGB(255, 207, 207, 207);
+    SoundManager.instance.playSfx('ui_click');
     action();
   }
 

@@ -9,6 +9,7 @@ import 'components/control_panel_backdrop.dart';
 import 'control_panel_controller.dart';
 import '../shared/molecules/game_modal.dart';
 import '../shared/settings.dart';
+import '../shared/sound_manager.dart';
 import 'control_panel_route.dart';
 
 class ControlPanelWorld extends World {
@@ -53,6 +54,8 @@ class ControlPanelWorld extends World {
   final ControlPanelController _controller;
   final ControlPanelMode mode;
   final VoidCallback? onMiniGameFinishExit;
+
+  static const _padKeys = ['pad_a', 'pad_b', 'pad_c', 'pad_d'];
 
   late final TextComponent _titleText;
   late final TextComponent _levelText;
@@ -227,6 +230,9 @@ class ControlPanelWorld extends World {
     _setStatus(_statusIntro);
     _updateLevelText();
     _showIntroDialog();
+
+    _controller.onIncorrect = () => SoundManager.instance.playSfx('incorrect');
+    _controller.onVictory = () => SoundManager.instance.playSfx('success');
   }
 
   void _startFromIntroDialog() {
@@ -356,6 +362,7 @@ class ControlPanelWorld extends World {
 
       _playbackButtonIndex = _controller.sequence[_playbackStep];
       _setButtonHighlight(_playbackButtonIndex!, true);
+      _playPadSound(_playbackButtonIndex!);
       _playbackIsLit = true;
       _playbackTimer = _lightDurationSeconds;
       return;
@@ -451,6 +458,8 @@ class ControlPanelWorld extends World {
     // Button press scale animation
     _buttonScale[index] = 0.9;
 
+    _playPadSound(index);
+
     _flashButton(index);
 
     final ControlPanelInputResult result = _controller.submitInput(index);
@@ -463,12 +472,14 @@ class ControlPanelWorld extends World {
         _updateProgressDots();
         _setStatus(_statusGood);
       case ControlPanelInputResult.roundComplete:
+        _controller.onRoundComplete?.call();
         _updateProgressDots();
         _updateLevelText();
         _setStatus(_statusNext);
         _awaitingNextRound = true;
         _nextRoundDelay = _difficultyNextRoundDelay;
       case ControlPanelInputResult.gameWon:
+        _controller.onVictory?.call();
         _updateProgressDots();
         _updateLevelText();
         _setStatus(_statusWin);
@@ -476,6 +487,7 @@ class ControlPanelWorld extends World {
         _victoryDialogOpen = true;
         _showVictoryDialog();
       case ControlPanelInputResult.incorrect:
+        _controller.onIncorrect?.call();
         _setStatus(_statusFail);
         _clearButtonHighlights();
     }
@@ -575,5 +587,9 @@ class ControlPanelWorld extends World {
       buttonText: buttonText,
       onPressed: _closeVictoryDialog,
     ));
+  }
+
+  void _playPadSound(int padIndex) {
+    SoundManager.instance.playSfx(_padKeys[padIndex]);
   }
 }

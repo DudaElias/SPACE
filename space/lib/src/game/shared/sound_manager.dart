@@ -22,7 +22,7 @@ class SoundManager {
     _SfxEntry('incorrect', 'shared/incorrect.mp3'),
     _SfxEntry('success', 'shared/success.mp3'),
     _SfxEntry('whoosh', 'broken_ship/whoosh.mp3'),
-    _SfxEntry('ui_click', 'shared/ui_click.ogg'),
+    _SfxEntry('ui_click', 'shared/ui_click.mp3'),
     _SfxEntry('pad_a', 'control_panel/pad_a.mp3', maxPlayers: 2),
     _SfxEntry('pad_b', 'control_panel/pad_b.mp3', maxPlayers: 2),
     _SfxEntry('pad_c', 'control_panel/pad_c.mp3', maxPlayers: 2),

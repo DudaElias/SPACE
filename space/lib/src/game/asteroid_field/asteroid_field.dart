@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/molecules/game_modal.dart';
 import 'package:space/src/game/shared/settings.dart';
+import 'package:space/src/game/shared/sound_manager.dart';
 import 'components/asteroid_field_components.dart';
 
 enum AsteroidFieldPhase { waiting, playing, gameOver }
@@ -254,6 +255,7 @@ class AsteroidField extends FlameGame
       return;
     }
 
+    SoundManager.instance.playBgm('asteroid_field/bgm.mp3');
 
     phase = AsteroidFieldPhase.playing;
     statusText.removeFromParent();
@@ -307,6 +309,9 @@ class AsteroidField extends FlameGame
       return;
     }
 
+    SoundManager.instance.playSfx('asteroid_hit');
+    SoundManager.instance.stopBgm();
+
     phase = AsteroidFieldPhase.gameOver;
     removeAll(
       children
@@ -328,6 +333,9 @@ class AsteroidField extends FlameGame
     if (phase != AsteroidFieldPhase.playing) {
       return;
     }
+
+    SoundManager.instance.playSfx('success');
+    SoundManager.instance.stopBgm();
 
     phase = AsteroidFieldPhase.gameOver;
     removeAll(children.where((child) => child is Asteroid || child is FakeExplosion).toList());
@@ -478,6 +486,7 @@ class AsteroidField extends FlameGame
       return;
     }
 
+    SoundManager.instance.playSfx('correct');
     petiscosCollected += 1;
     petiscoText.text = 'Petiscos: $petiscosCollected';
     petisco.removeFromParent();

@@ -7,6 +7,7 @@ import 'package:space/src/game/shared/atoms/button.dart';
 import 'package:space/src/game/shared/atoms/back_button.dart';
 import 'package:space/src/game/shared/molecules/game_modal.dart';
 import 'package:space/src/game/shared/settings.dart';
+import 'package:space/src/game/shared/sound_manager.dart';
 
 class Menu extends Component with HasGameReference<SpaceGame> {
   late SpriteComponent _logo;
@@ -29,8 +30,8 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     final logoImage = game.images.fromCache('logo.png');
 
     _logo = SpriteComponent(sprite: Sprite(logoImage), size: Vector2(380, 380), anchor: Anchor.center);
-    _btnStory = RoundedButton(text: 'Iniciar Missão', action: () => game.router.pushNamed('story-mode'), color: const Color(0xffFF986A));
-    _btnMinigames = RoundedButton(text: 'Mini Jogos', action: () => game.router.pushNamed('minigame-selector'), color: const Color(0xffFF986A));
+    _btnStory = RoundedButton(text: 'Iniciar Missão', action: () { SoundManager.instance.stopBgm(); game.router.pushNamed('story-mode'); }, color: const Color(0xffFF986A));
+    _btnMinigames = RoundedButton(text: 'Mini Jogos', action: () { SoundManager.instance.stopBgm(); game.router.pushNamed('minigame-selector'); }, color: const Color(0xffFF986A));
     _btnRanking = RoundedButton(text: 'Ranking', action: () => game.router.pushNamed('ranking'), color: const Color(0xFF1F3A5F));
     _btnHelp = RoundedButton(text: 'Ajuda', action: _openHelp, color: const Color(0xFF1F3A5F));
     _btnConfig = RoundedButton(text: 'Configurações', action: _openSettings, color: const Color(0xFF1F3A5F));
@@ -40,11 +41,14 @@ class Menu extends Component with HasGameReference<SpaceGame> {
     _hudComponents.add(SimpleBackButton());
     game.camera.viewport.addAll(_hudComponents);
 
+    SoundManager.instance.playBgm('shared/menu_bgm.mp3');
+
     _updateStoryButton();
   }
 
   @override
   void onRemove() {
+    SoundManager.instance.stopBgm();
     game.setOverlayOpen(false);
     game.camera.viewport.removeAll(_hudComponents);
     super.onRemove();

@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:space/src/game/shared/sound_manager.dart';
 
 class RoundedButton extends PositionComponent with TapCallbacks {
   RoundedButton({
@@ -55,6 +56,7 @@ class RoundedButton extends PositionComponent with TapCallbacks {
 
   @override
   void onTapDown(TapDownEvent event) {
+    SoundManager.instance.playSfx('ui_click');
     scale = Vector2.all(1.05);
   }
 

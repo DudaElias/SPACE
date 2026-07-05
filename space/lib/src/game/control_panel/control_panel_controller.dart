@@ -23,6 +23,11 @@ class ControlPanelController {
   int get playerProgress => _playerIndex;
   List<int> get sequence => List<int>.unmodifiable(_sequence);
 
+  void Function()? onCorrect;
+  void Function()? onRoundComplete;
+  void Function()? onIncorrect;
+  void Function()? onVictory;
+
   void startNewGame() {
     _sequence
       ..clear()

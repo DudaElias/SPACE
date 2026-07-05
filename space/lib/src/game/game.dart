@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' show Color;
 
 import 'package:flame/game.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:space/src/game/asteroid_field/asteroid_field.dart';
 import 'package:space/src/game/broken_ship/broken_ship_route.dart';
@@ -13,6 +14,7 @@ import 'package:space/src/game/story_mode.dart';
 import 'package:space/src/game/user_select.dart';
 import 'package:space/src/game/shared/molecules/database.dart';
 import 'package:space/src/game/shared/settings.dart';
+import 'package:space/src/game/shared/sound_manager.dart';
 
 class SpaceGame extends FlameGame {
   late final RouterComponent router;
@@ -36,6 +38,7 @@ class SpaceGame extends FlameGame {
 
   void setGlobalVolume(double volume) {
     GameSettings.instance.soundVolume = volume;
+    FlameAudio.bgm.audioPlayer.setVolume(volume);
   }
 
   void _applyBarColor() {
@@ -48,14 +51,23 @@ class SpaceGame extends FlameGame {
     barColor.value = base;
   }
 
+  void _updateRoute(String? route) {
+    if (route == _lastRouteName) return;
+
+    if (route != null && _gameplayRoutes.contains(route)) {
+      SoundManager.instance.stopBgm();
+    } else if (route == 'home') {
+      SoundManager.instance.playBgm('shared/menu_bgm.mp3');
+    }
+
+    _lastRouteName = route;
+    _applyBarColor();
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
-    final name = router.currentRoute.name;
-    if (name != _lastRouteName) {
-      _lastRouteName = name;
-      _applyBarColor();
-    }
+    _updateRoute(router.currentRoute.name);
   }
 
   void setOverlayOpen(bool open) {
@@ -158,6 +170,8 @@ class SpaceGame extends FlameGame {
 
   @override
   Future<void> onLoad() async {
+    await SoundManager.instance.init();
+
     // Preload images before starting the game
     await images.load('logo.png');
     await images.load('spaceship.png');

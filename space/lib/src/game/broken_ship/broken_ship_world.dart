@@ -1,10 +1,10 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/material.dart';
 
 import '../shared/molecules/game_modal.dart';
 import '../shared/settings.dart';
+import '../shared/sound_manager.dart';
 import 'broken_ship_controller.dart';
 import 'broken_ship_route.dart';
 import 'components/broken_ship_backdrop.dart';
@@ -81,27 +81,10 @@ class BrokenShipWorld extends World with DragCallbacks {
 
     _controller = BrokenShipController();
 
-    AudioPlayer.global.setAudioContext(
-      AudioContext(
-        android: const AudioContextAndroid(
-          contentType: AndroidContentType.sonification,
-          usageType: AndroidUsageType.game,
-          audioFocus: AndroidAudioFocus.gain,
-        ),
-      ),
-    );
-
-    FlameAudio.audioCache.prefix = 'assets/sounds/';
-
-    final correctPool = await FlameAudio.createPool('broken_ship/correct.mp3', maxPlayers: 4);
-    final incorrectPool = await FlameAudio.createPool('broken_ship/incorrect.mp3', maxPlayers: 4);
-    final whooshPool = await FlameAudio.createPool('broken_ship/whoosh.mp3', maxPlayers: 4);
-    final successPool = await FlameAudio.createPool('broken_ship/success.mp3', maxPlayers: 4);
-
-    _controller.onCorrect = () => correctPool.start(volume: GameSettings.instance.soundVolume);
-    _controller.onIncorrect = () => incorrectPool.start(volume: GameSettings.instance.soundVolume);
-    _controller.onMiss = () => whooshPool.start(volume: GameSettings.instance.soundVolume);
-    _controller.onVictory = () => successPool.start(volume: GameSettings.instance.soundVolume);
+    _controller.onCorrect = () => SoundManager.instance.playSfx('correct');
+    _controller.onIncorrect = () => SoundManager.instance.playSfx('incorrect');
+    _controller.onMiss = () => SoundManager.instance.playSfx('whoosh');
+    _controller.onVictory = () => SoundManager.instance.playSfx('success');
 
     _backdrop = BrokenShipBackdrop();
     await add(_backdrop);
