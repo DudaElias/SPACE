@@ -10,9 +10,10 @@ class RoundedButton extends PositionComponent with TapCallbacks {
     required this.action,
     required this.color,
     super.position,
+    super.size,
     super.anchor = Anchor.center,
   }) : _text = text {
-    size = Vector2(250, 50);
+    size = Vector2(size.x > 0 ? size.x : 250, size.y > 0 ? size.y : 50);
     _updateDrawable();
   }
 
