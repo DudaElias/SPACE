@@ -15,6 +15,7 @@ class SoundManager {
   SoundManager._();
 
   bool _initialized = false;
+  String? _currentBgmPath;
   final Map<String, AudioPool> _pools = {};
 
   static const _sfx = [
@@ -62,11 +63,14 @@ class SoundManager {
   }
 
   Future<void> playBgm(String path) async {
+    if (_currentBgmPath == path) return;
     await FlameAudio.bgm.stop();
+    _currentBgmPath = path;
     await FlameAudio.bgm.play(path, volume: GameSettings.instance.soundVolume);
   }
 
   Future<void> stopBgm() async {
+    _currentBgmPath = null;
     await FlameAudio.bgm.stop();
   }
 }
