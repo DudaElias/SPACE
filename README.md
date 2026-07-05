@@ -233,6 +233,7 @@ No AI art was used in this game. The logo and character art were created by
 ### Images
 
 - Gear SVG by Dazzle UI — [svgrepo.com/svg/532244/gear](https://www.svgrepo.com/svg/532244/gear)
+- Mouse clicker icons by Upnow Graphic — [flaticon.com/free-icon/click_14993969](https://www.flaticon.com/free-icon/click_14993969)
 
 ---
 
