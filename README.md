@@ -226,7 +226,7 @@ No AI art was used in this game. The logo and character art were created by
 | `pad_c.mp3` | Artninja (custom_lever_pulling_sounds_02182026) | [freesound.org/s/845787](https://freesound.org/s/845787) | CC BY 4.0 |
 | `pad_d.mp3` | Artninja — modified with deeper pitch | (see pad_c) | CC BY 4.0 |
 | `asteroid_hit.mp3` | Lumora_Studios (Pixel Explosion) | [pixabay.com](https://pixabay.com/sound-effects/film-special-effects-pixel-explosion-319166/) | — |
-| `ui_click.ogg` | Jummit (Soft UI Button Click) | [freesound.org/s/528561/](https://freesound.org/s/528561/) | CC0 |
+| `ui_click.mp3` | Jummit (Soft UI Button Click) | [freesound.org/s/528561/](https://freesound.org/s/528561/) | CC0 |
 | `menu_bgm.mp3` | Musinova (IDM Electronic Atmospheric Background) | [pixabay.com](https://pixabay.com/music/upbeat-idm-electronic-atmospheric-background-414214/) | — |
 | `bgm.mp3` | Benjamin Tissot (Extreme Action) | [bensound.com](https://www.bensound.com/royalty-free-music/track/extreme-action) | License: 54J9PXM6YDMQ5KVQ |
 
