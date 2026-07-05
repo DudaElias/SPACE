@@ -219,8 +219,16 @@ No AI art was used in this game. The logo and character art were created by
 |------|--------|--------|---------|
 | `correct.mp3` | Rob_Marion (GASP_UI_Confirm.wav) | [freesound.org/s/542044](https://freesound.org/s/542044) | CC0 |
 | `incorrect.mp3` | timgormly (Training Program, Incorrect1.aif) | [freesound.org/s/181858](https://freesound.org/s/181858) | CC0 |
-| `whoosh.mp3` | StudioKolomna (Fast Whoosh) | [pixabay.com](https://pixabay.com/sound-effects/film-special-effects-fast-whoosh-118248) | — |
 | `success.mp3` | oysterqueen | [freesound.org/s/582988](https://freesound.org/s/582988) | CC0 |
+| `whoosh.mp3` | StudioKolomna (Fast Whoosh) | [pixabay.com](https://pixabay.com/sound-effects/film-special-effects-fast-whoosh-118248) | — |
+| `pad_a.mp3` | floraphonic (90s Game UI 4) | [pixabay.com](https://pixabay.com/sound-effects/film-special-effects-90s-game-ui-4-185097) | — |
+| `pad_b.mp3` | floraphonic — modified with higher pitch | (see pad_a) | — |
+| `pad_c.mp3` | Artninja (custom_lever_pulling_sounds_02182026) | [freesound.org/s/845787](https://freesound.org/s/845787) | CC BY 4.0 |
+| `pad_d.mp3` | Artninja — modified with deeper pitch | (see pad_c) | CC BY 4.0 |
+| `asteroid_hit.mp3` | Lumora_Studios (Pixel Explosion) | [pixabay.com](https://pixabay.com/sound-effects/film-special-effects-pixel-explosion-319166/) | — |
+| `ui_click.ogg` | Jummit (Soft UI Button Click) | [freesound.org/s/528561/](https://freesound.org/s/528561/) | CC0 |
+| `menu_bgm.mp3` | Musinova (IDM Electronic Atmospheric Background) | [pixabay.com](https://pixabay.com/music/upbeat-idm-electronic-atmospheric-background-414214/) | — |
+| `bgm.mp3` | Benjamin Tissot (Extreme Action) | [bensound.com](https://www.bensound.com/royalty-free-music/track/extreme-action) | License: 54J9PXM6YDMQ5KVQ |
 
 ### Images
 
