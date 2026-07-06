@@ -116,42 +116,42 @@ class SpaceGame extends FlameGame {
 
   void _popRoute() => router.pop();
 
-  void onChallenge1Complete() {
+  void onChallenge1Complete(int score) {
     unlockedMinigames.add('minigame-1');
     storyReturned = true;
-    _recordRanking('minigame-1', 'win', 0);
+    _recordRanking('minigame-1', 'win', score);
     _saveUnlock('minigame-1');
     router.pop();
   }
 
-  void onChallenge2Complete() {
+  void onChallenge2Complete(int score) {
     unlockedMinigames.add('minigame-2');
     storyReturned = true;
-    _recordRanking('minigame-2', 'win', 0);
+    _recordRanking('minigame-2', 'win', score);
     _saveUnlock('minigame-2');
     router.pop();
   }
 
-  void onChallenge3Complete() {
+  void onChallenge3Complete(int score) {
     unlockedMinigames.add('minigame-3');
     storyReturned = true;
-    _recordRanking('minigame-3', 'win', 0);
+    _recordRanking('minigame-3', 'win', score);
     _saveUnlock('minigame-3');
     router.pop();
   }
 
-  void onMinigame1Complete() {
-    _recordRanking('minigame-1', 'win', 0);
+  void onMinigame1Complete(int score) {
+    _recordRanking('minigame-1', 'win', score);
     router.pop();
   }
 
-  void onMinigame2Complete() {
-    _recordRanking('minigame-2', 'win', 0);
+  void onMinigame2Complete(int score) {
+    _recordRanking('minigame-2', 'win', score);
     router.pop();
   }
 
-  void onMinigame3Complete() {
-    _recordRanking('minigame-3', 'win', 0);
+  void onMinigame3Complete(int score) {
+    _recordRanking('minigame-3', 'win', score);
     router.pop();
   }
 

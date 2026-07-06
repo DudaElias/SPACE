@@ -21,7 +21,7 @@ class BrokenShipWorld extends World with DragCallbacks {
   });
 
   final BrokenShipMode mode;
-  final VoidCallback? onMiniGameFinishExit;
+  final void Function(int score)? onMiniGameFinishExit;
 
   late final BrokenShipController _controller;
   late final BrokenShipBackdrop _backdrop;
@@ -409,7 +409,7 @@ class BrokenShipWorld extends World with DragCallbacks {
       onPressed: () {
         _activeModal?.removeFromParent();
         _activeModal = null;
-        onMiniGameFinishExit?.call();
+        onMiniGameFinishExit?.call(_controller.calculateScore());
       },
       style: GameModalStyle.success,
       panelSize: Vector2(500, 300),

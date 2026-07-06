@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 
@@ -18,7 +17,7 @@ class ControlPanelRoute extends Component with HasGameReference<SpaceGame> {
   });
 
   final ControlPanelMode mode;
-  final VoidCallback? onMiniGameFinishExit;
+  final void Function(int score)? onMiniGameFinishExit;
 
   late final ControlPanelWorld _world;
   late final CameraComponent _camera;
