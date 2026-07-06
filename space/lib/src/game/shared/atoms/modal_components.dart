@@ -128,7 +128,7 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
     required this.onPressed,
     required this.style,
     Vector2? size,
-  }) : super(size: size ?? Vector2(210, 48), anchor: Anchor.center) {
+  }) : super(size: size ?? Vector2(280, 48), anchor: Anchor.center) {
     _labelText = TextComponent(
       text: label,
       anchor: Anchor.center,

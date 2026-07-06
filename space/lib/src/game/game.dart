@@ -200,8 +200,12 @@ class SpaceGame extends FlameGame {
     await images.load('spaceship.png');
     await images.load('laika.png');
     await images.load('background_history.png');
+    await images.load('background_history_ch4.png');
     await images.load('bone.png');
     await images.load('tutorial_hand.png');
+    await images.load('astronaut.png');
+    await images.load('icon.png');
+    await images.load('human_and_laika.png');
 
     final pieceNames = [
       'gear-blue', 'gear-blue-broken', 'gear-orange', 'gear-orange-broken',

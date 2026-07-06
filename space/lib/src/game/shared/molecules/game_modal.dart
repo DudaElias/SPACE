@@ -37,7 +37,7 @@ class GameModal extends PositionComponent {
   late TextComponent _titleText;
   late GameModalActionButton _button;
   GameModalActionButton? _secondaryButton;
-  ScrollTextBoxComponent<TextPaint>? _msgComponent;
+  TextBoxComponent<TextPaint>? _msgComponent;
   Vector2? _pendingLayoutSize;
   bool _uiReady = false;
   String _pendingMessage = '';
@@ -56,15 +56,18 @@ class GameModal extends PositionComponent {
       ),
     );
 
+    final hasSecondary = secondaryButtonText != null && onSecondaryPressed != null;
+
     _button = GameModalActionButton(
       label: buttonText,
       onPressed: onPressed,
       style: style,
+      size: hasSecondary ? Vector2(180, 48) : null,
     )..priority = 102;
 
     addAll([_backdrop, _panel, _titleText, _button]);
 
-    if (secondaryButtonText != null && onSecondaryPressed != null) {
+    if (hasSecondary) {
       _secondaryButton = GameModalActionButton(
         label: secondaryButtonText!,
         onPressed: onSecondaryPressed!,
@@ -87,38 +90,30 @@ class GameModal extends PositionComponent {
 
     if (_secondaryButton != null) {
       final gap = 20.0;
-      final secHalf = 90.0;
-      final primHalf = 105.0;
-      _secondaryButton!.position = _panel.position + Vector2(-primHalf - gap / 2, panelSize.y / 2 - 36);
-      _button.position = _panel.position + Vector2(secHalf + gap / 2, panelSize.y / 2 - 36);
+      final half = 90.0;
+      _secondaryButton!.position = _panel.position + Vector2(-half - gap / 2, panelSize.y / 2 - 36);
+      _button.position = _panel.position + Vector2(half + gap / 2, panelSize.y / 2 - 36);
     } else {
       _button.position = _panel.position + Vector2(0, panelSize.y / 2 - 36);
     }
 
     final text = _pendingMessage.isNotEmpty ? _pendingMessage : message;
-    final renderer = TextPaint(
-      style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
-    );
 
     _msgComponent?.removeFromParent();
-    final msg = ScrollTextBoxComponent<TextPaint>(
-      size: Vector2(panelSize.x - 80, panelSize.y - 150),
+    final msg = TextBoxComponent<TextPaint>(
       text: text,
-      textRenderer: renderer,
-      boxConfig: const TextBoxConfig(timePerChar: 0),
+      textRenderer: TextPaint(
+        style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
+      ),
+      boxConfig: TextBoxConfig(maxWidth: panelSize.x - 80, timePerChar: 0),
       anchor: Anchor.topCenter,
       position: Vector2(gameSize.x / 2, gameSize.y / 2 - panelSize.y / 2 + 80),
       priority: 102,
-      onComplete: () {
-        final clip = _msgComponent?.children.firstOrNull;
-        if (clip != null && clip.children.isNotEmpty) {
-          (clip.children.first as PositionComponent).position.y = 0;
-        }
-      },
     );
     _msgComponent = msg;
     add(msg);
     _pendingLayoutSize = null;
+    _pendingMessage = '';
   }
 
   void layoutForSize(Vector2 gameSize) {

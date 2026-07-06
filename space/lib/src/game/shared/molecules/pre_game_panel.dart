@@ -363,7 +363,7 @@ class _PreGameStartButton extends PositionComponent with TapCallbacks {
     canvas.drawRRect(rrect, Paint()..color = const Color(0xffFF986A));
     final tp = TextPainter(
       text: TextSpan(
-        text: 'Comecar!',
+        text: 'Começar!',
         style: TextStyle(
           fontFamily: GoogleFonts.silkscreen().fontFamily,
           color: Colors.white,

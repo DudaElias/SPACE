@@ -17,7 +17,7 @@ enum TutorialAction {
 }
 
 class TutorialStep {
-  const TutorialStep({
+  TutorialStep({
     required this.text,
     this.highlightTarget,
     this.action = TutorialAction.none,
@@ -26,6 +26,8 @@ class TutorialStep {
     this.autoAdvanceSeconds,
     this.padIndex,
     this.buttonLabel,
+    this.previewImages,
+    this.previewLabels,
   });
 
   final String text;
@@ -36,6 +38,8 @@ class TutorialStep {
   final double? autoAdvanceSeconds;
   final int? padIndex;
   final String? buttonLabel;
+  List<ui.Image>? previewImages;
+  List<String>? previewLabels;
 }
 
 enum BubblePlacement { below, above, left, right }
@@ -122,17 +126,17 @@ class TutorialConfigs {
         action: TutorialAction.dragAnywhere,
       ),
       TutorialStep(
-        text: 'Desvie dos aster\u00F3ides\n(eles machucam!)',
+        text: 'Desvie dos asteroides\n(eles machucam!)',
         highlightTarget: null,
         action: TutorialAction.none,
       ),
       TutorialStep(
-        text: 'Colete ossinhos\npara pontos extras!',
+        text: 'Colete petiscos\npara pontos extras!',
         highlightTarget: null,
         action: TutorialAction.none,
       ),
       TutorialStep(
-        text: 'Chegue ao final do\ncampo de aster\u00F3ides!',
+        text: 'Chegue ao final do\ncampo de asteroides!',
         highlightTarget: TutorialHighlightTarget(
           rect: Rect.fromLTWH(gameSize.x / 2 - 120, 4, 240, 28),
         ),
@@ -145,14 +149,14 @@ class TutorialConfigs {
 
   static List<TutorialStep> brokenShipSteps(Vector2 gameSize) {
     final cx = gameSize.x / 2;
-    final pieceY = gameSize.y * 0.35;
+    final pieceY = gameSize.y * 0.45;
     const pieceSize = 100.0;
 
     return [
       TutorialStep(
         text: 'Arraste as pe\u00E7as para\nos lados para classificar!',
         highlightTarget: TutorialHighlightTarget(
-          rect: Rect.fromLTWH(cx - pieceSize, pieceY - pieceSize / 2, pieceSize * 2, pieceSize),
+          rect: Rect.fromCenter(center: Offset(cx, pieceY), width: cx * 1.8, height: pieceSize + 20),
         ),
         action: TutorialAction.dragToLeft,
       ),
@@ -161,6 +165,11 @@ class TutorialConfigs {
         highlightTarget: TutorialHighlightTarget(
           rect: Rect.fromLTWH(cx - 160, gameSize.y * 0.17, 320, 60),
         ),
+        action: TutorialAction.none,
+      ),
+      TutorialStep(
+        text: 'As pe\u00E7as variam por tipo, cor e estado! A regra\nde classifica\u00E7\u00E3o pode mudar a qualquer hora.',
+        highlightTarget: null,
         action: TutorialAction.none,
       ),
       TutorialStep(
@@ -205,6 +214,7 @@ class TutorialOverlay extends PositionComponent {
   double _autoAdvanceTimer = 0;
   double _handAnimTimer = 0;
   double _handBounce = 0;
+  double _dragAnimTimer = 0;
   bool _isCompleted = false;
 
   late final _CutoutBackdrop _backdrop;
@@ -282,6 +292,12 @@ class TutorialOverlay extends PositionComponent {
     _skipButton.setVisible(!step.isLastStep);
 
     _layoutForCurrentStep();
+
+    if (step.previewImages != null && step.previewLabels != null) {
+      _bubble.setPreviews(step.previewImages!, step.previewLabels!);
+    } else {
+      _bubble.clearPreviews();
+    }
   }
 
   void _layoutForCurrentStep() {
@@ -334,8 +350,9 @@ class TutorialOverlay extends PositionComponent {
   }
 
   void _layoutBubble() {
-    const bubbleW = 380.0;
-    const bubbleH = 160.0;
+    final hasPreviews = currentStep.previewImages != null;
+    final bubbleW = hasPreviews ? 560.0 : 380.0;
+    final bubbleH = hasPreviews ? 380.0 : 160.0;
     final cx = gameSize.x / 2;
     final cy = gameSize.y / 2;
 
@@ -442,8 +459,40 @@ class TutorialOverlay extends PositionComponent {
     _handBounce = sin(_handAnimTimer * 3.0) * 10;
 
     if (_hand.isVisible) {
-      final topEdge = _highlightCenter.dy - _highlightRadius;
-      _hand.setAnimatedPosition(_highlightCenter.dx, topEdge - 85 + _handBounce);
+      final step = steps[_currentStep];
+      final isDragAction = step.action == TutorialAction.dragAnywhere ||
+          step.action == TutorialAction.dragToLeft ||
+          step.action == TutorialAction.dragToRight;
+
+      if (isDragAction && _currentHighlight != null) {
+        _dragAnimTimer += dt;
+        final cycleDuration = 1.8;
+        final phase = (_dragAnimTimer % cycleDuration) / cycleDuration;
+        double handX, handY;
+        final startX = _highlightCenter.dx;
+        final startY = _highlightCenter.dy;
+        final targetX = step.action == TutorialAction.dragToLeft
+            ? gameSize.x * 0.24
+            : step.action == TutorialAction.dragToRight
+                ? gameSize.x * 0.76
+                : startX - 60;
+
+        if (phase < 0.5) {
+          final t = phase / 0.5;
+          handX = startX + (targetX - startX) * t;
+          handY = startY;
+        } else if (phase < 0.7) {
+          handX = targetX;
+          handY = startY;
+        } else {
+          handX = startX;
+          handY = startY;
+        }
+        _hand.setAnimatedPosition(handX, handY);
+      } else {
+        final topEdge = _highlightCenter.dy - _highlightRadius;
+        _hand.setAnimatedPosition(_highlightCenter.dx, topEdge - 85 + _handBounce);
+      }
     }
   }
 }
@@ -523,6 +572,8 @@ class _SpeechBubble extends PositionComponent with TapCallbacks {
   bool _isLastStep = false;
   String? _buttonLabel;
   bool _showButton = true;
+  List<ui.Image>? _previewImages;
+  List<String>? _previewLabels;
 
   late TextComponent _textComp;
   late TextComponent _buttonLabelComp;
@@ -531,6 +582,24 @@ class _SpeechBubble extends PositionComponent with TapCallbacks {
     _text = text;
     if (isLoaded) {
       _textComp.text = text;
+    }
+  }
+
+  void setPreviews(List<ui.Image> images, List<String> labels) {
+    _previewImages = images;
+    _previewLabels = labels;
+    if (isLoaded) {
+      _textComp.position = Vector2(size.x / 2, 30);
+      _buttonLabelComp.position = Vector2(size.x / 2, size.y - 28);
+    }
+  }
+
+  void clearPreviews() {
+    _previewImages = null;
+    _previewLabels = null;
+    if (isLoaded) {
+      _textComp.position = Vector2(size.x / 2, size.y * 0.35);
+      _buttonLabelComp.position = Vector2(size.x / 2, size.y - 28);
     }
   }
 
@@ -603,6 +672,48 @@ class _SpeechBubble extends PositionComponent with TapCallbacks {
         ..strokeWidth = 1.5
         ..color = const Color(0xFF9EEAFF).withAlpha(70),
     );
+
+    if (_previewImages != null && _previewLabels != null) {
+      final imgs = _previewImages!;
+      final labels = _previewLabels!;
+      final imgSize = 44.0;
+      final spacing = 90.0;
+      final perRow = 4;
+      final rows = (imgs.length / perRow).ceil();
+      final startY = size.y * 0.30;
+
+      for (int row = 0; row < rows; row++) {
+        final rowCount = (row == rows - 1) ? imgs.length - row * perRow : perRow;
+        final rowW = rowCount * imgSize + (rowCount - 1) * spacing;
+        final startX = (size.x - rowW) / 2;
+        final y = startY + row * (imgSize + 50);
+
+        for (int col = 0; col < rowCount; col++) {
+          final i = row * perRow + col;
+          if (i >= imgs.length) break;
+          final x = startX + col * (imgSize + spacing);
+          final srcRect = Rect.fromLTWH(0, 0, imgs[i].width.toDouble(), imgs[i].height.toDouble());
+          final dstRect = Rect.fromLTWH(x, y, imgSize, imgSize);
+          canvas.drawImageRect(imgs[i], srcRect, dstRect, Paint());
+
+          if (i < labels.length) {
+            final labelTp = TextPainter(
+              text: TextSpan(
+                text: labels[i],
+                style: TextStyle(
+                  fontFamily: GoogleFonts.silkscreen().fontFamily,
+                  color: const Color(0xFF94A3B8),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              textDirection: TextDirection.ltr,
+            )..layout(maxWidth: imgSize + spacing + 10);
+            labelTp.paint(canvas, Offset(x + (imgSize - labelTp.width) / 2, y + imgSize + 4));
+          }
+        }
+      }
+    }
 
     if (_showButton) {
       final btnWidth = 140.0;

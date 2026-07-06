@@ -17,7 +17,7 @@ class UserSelectScreen extends Component with HasGameReference<SpaceGame> {
 
   @override
   Future<void> onLoad() async {
-    _loadUsers();
+    await _loadUsers();
   }
 
   @override
@@ -51,7 +51,9 @@ class UserSelectScreen extends Component with HasGameReference<SpaceGame> {
 
   void _rebuild() {
     if (!isMounted) return;
+    final savedModal = _activeModal;
     removeAll(children);
+    _activeModal = null;
     final size = game.size;
     final cx = size.x / 2;
 
@@ -131,6 +133,12 @@ class UserSelectScreen extends Component with HasGameReference<SpaceGame> {
         anchor: Anchor.center,
         position: Vector2(cx, size.y * 0.90),
       ));
+    }
+
+    if (savedModal != null) {
+      _activeModal = savedModal;
+      savedModal.layoutForSize(game.size);
+      add(savedModal);
     }
   }
 

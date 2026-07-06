@@ -590,9 +590,40 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
   void _startTutorial() {
     _tutorialActive = true;
 
+    _controller.startGame();
+    _refreshRuleUI();
+    _repairMeter.setProgress(0);
+    _comboDisplay.reset();
+
     final game = findGame()! as SpaceGame;
     final handImage = game.images.fromCache('tutorial_hand.png');
     final steps = TutorialConfigs.brokenShipSteps(game.size);
+
+    final previewPaths = [
+      'gear-blue.png',
+      'gear-orange.png',
+      'battery-blue.png',
+      'battery-orange.png',
+      'gear-blue-broken.png',
+      'gear-orange-broken.png',
+      'battery-blue-broken.png',
+      'battery-orange-broken.png',
+    ];
+    final previewLabels = [
+      'Engrenagem Azul',
+      'Engrenagem Laranja',
+      'Bateria Azul',
+      'Bateria Laranja',
+      'Engrenagem Azul Quebrada',
+      'Engrenagem Laranja Quebrada',
+      'Bateria Azul\nQuebrada',
+      'Bateria Laranja Quebrada',
+    ];
+    final previewImages = previewPaths
+        .map((p) => game.images.fromCache('broken_ship_pieces/$p'))
+        .toList();
+    steps[2].previewImages = previewImages;
+    steps[2].previewLabels = previewLabels;
 
     _tutorialOverlay = TutorialOverlay(
       steps: steps,
@@ -601,18 +632,18 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
       onTutorialComplete: () {
         _tutorialOverlay?.removeFromParent();
         _tutorialOverlay = null;
-        _tutorialActive = false;
         _removeTutorialPiece();
         game.markTutorialComplete('minigame-3');
         _showIntroModal();
+        _tutorialActive = false;
       },
       onTutorialSkip: () {
         _tutorialOverlay?.removeFromParent();
         _tutorialOverlay = null;
-        _tutorialActive = false;
         _removeTutorialPiece();
         game.markTutorialComplete('minigame-3');
         _showIntroModal();
+        _tutorialActive = false;
       },
     );
     add(_tutorialOverlay!);
@@ -621,10 +652,13 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
   }
 
   void _spawnTutorialPiece() {
-    final piece = _controller.generateNextPiece();
+    SortingPiece piece;
+    do {
+      piece = _controller.generateNextPiece();
+    } while (piece.shape != Shape.gear);
     final size = findGame()!.size;
     final spawnX = size.x * 0.5;
-    final spawnY = size.y * 0.35;
+    final spawnY = size.y * 0.45;
     _currentObject = SortingObject(piece: piece, fallSpeed: 0)
       ..position = Vector2(spawnX, spawnY);
     add(_currentObject!);

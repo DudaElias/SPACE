@@ -603,7 +603,7 @@ class ControlPanelWorld extends World {
           'Observe os comandos que acendem no painel e repita na mesma ordem.\n\nToque nos botões e alavancas na sequência certa para ligar o foguete e salvar seu melhor amigo humano!',
       buttonText: 'Iniciar',
       onPressed: _startFromIntroDialog,
-      panelSize: Vector2(500, 280),
+      panelSize: Vector2(500, 380),
     ));
   }
 
@@ -667,16 +667,16 @@ class ControlPanelWorld extends World {
       onTutorialComplete: () {
         _tutorialOverlay?.removeFromParent();
         _tutorialOverlay = null;
-        _tutorialActive = false;
         game.markTutorialComplete('minigame-1');
         _showIntroDialog();
+        _tutorialActive = false;
       },
       onTutorialSkip: () {
         _tutorialOverlay?.removeFromParent();
         _tutorialOverlay = null;
-        _tutorialActive = false;
         game.markTutorialComplete('minigame-1');
         _showIntroDialog();
+        _tutorialActive = false;
       },
     );
     add(_tutorialOverlay!);

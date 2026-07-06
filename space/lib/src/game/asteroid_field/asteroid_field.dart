@@ -26,6 +26,7 @@ class AsteroidField extends FlameGame
 
   TutorialOverlay? _tutorialOverlay;
   bool _tutorialActive = false;
+  bool _pendingLayout = false;
 
   late RocketPlayer player;
   late TextComponent statusText;
@@ -142,7 +143,7 @@ class AsteroidField extends FlameGame
     introModal = GameModal(
       title: 'Sua missão:',
       message:
-          'Guie o foguete através do campo de asteróides. Arraste para pilotar, evite os asteróides e as explosões, colete os petiscos, e alcance a linha de chegada.',
+          'Guie o foguete através do campo de asteroides. Arraste para pilotar, evite os asteroides e as explosões, e colete os petiscos.',
       buttonText: 'Comece a missão',
       onPressed: _startFromIntroModal,
     );
@@ -173,6 +174,17 @@ class AsteroidField extends FlameGame
     }
 
     if (skipTutorial) {
+      _pendingLayout = true;
+    } else {
+      _pendingLayout = true;
+    }
+  }
+
+  void _onLayoutReady() {
+    if (!_pendingLayout) return;
+    _pendingLayout = false;
+
+    if (skipTutorial) {
       add(introModal);
       introModal.layoutForSize(size);
     } else {
@@ -185,6 +197,8 @@ class AsteroidField extends FlameGame
     super.onGameResize(canvasSize);
 
     if (isLoaded) {
+      _onLayoutReady();
+
       statusText.position = canvasSize / 2;
       petiscoText.position = Vector2(canvasSize.x - 20, 16);
       progressBg.position = Vector2(canvasSize.x / 2, 14);
@@ -409,6 +423,8 @@ class AsteroidField extends FlameGame
   @override
   void onTapDown(TapDownEvent event) {
     super.onTapDown(event);
+
+    if (_tutorialActive) return;
 
     if (introModal.isMounted) {
       _startFromIntroModal();
