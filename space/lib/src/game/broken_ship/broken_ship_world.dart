@@ -60,6 +60,7 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
   bool _phase3RuleRevealed = false;
 
   GameModal? _activeModal;
+  Vector2? _lastModalLayoutSize;
 
   double get _fallSpeed {
     switch (GameSettings.instance.difficulty) {
@@ -204,7 +205,11 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
     }
 
     if (_activeModal != null) {
-      _activeModal!.layoutForSize(findGame()!.size);
+      final size = findGame()!.size;
+      if (_lastModalLayoutSize != size) {
+        _lastModalLayoutSize = size;
+        _activeModal!.layoutForSize(size);
+      }
     }
 
     if (_tutorialActive) return;
@@ -435,11 +440,13 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
       onPressed: () {
         _activeModal?.removeFromParent();
         _activeModal = null;
+        _lastModalLayoutSize = null;
         _startGame();
       },
       style: GameModalStyle.shared,
       panelSize: Vector2(500, 330),
     );
+    _lastModalLayoutSize = null;
     add(_activeModal!);
     _activeModal!.layoutForSize(findGame()!.size);
   }
@@ -453,11 +460,13 @@ class BrokenShipWorld extends World with DragCallbacks, TapCallbacks {
       onPressed: () {
         _activeModal?.removeFromParent();
         _activeModal = null;
+        _lastModalLayoutSize = null;
         onMiniGameFinishExit?.call(_controller.calculateScore());
       },
       style: GameModalStyle.success,
       panelSize: Vector2(500, 300),
     );
+    _lastModalLayoutSize = null;
     add(_activeModal!);
     _activeModal!.layoutForSize(findGame()!.size);
   }

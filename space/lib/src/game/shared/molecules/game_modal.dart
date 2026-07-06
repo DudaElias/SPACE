@@ -98,20 +98,26 @@ class GameModal extends PositionComponent {
     }
 
     final text = _pendingMessage.isNotEmpty ? _pendingMessage : message;
+    final msgPosition = Vector2(gameSize.x / 2, gameSize.y / 2 - panelSize.y / 2 + 80);
 
-    _msgComponent?.removeFromParent();
-    final msg = TextBoxComponent<TextPaint>(
-      text: text,
-      textRenderer: TextPaint(
-        style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
-      ),
-      boxConfig: TextBoxConfig(maxWidth: panelSize.x - 80, timePerChar: 0),
-      anchor: Anchor.topCenter,
-      position: Vector2(gameSize.x / 2, gameSize.y / 2 - panelSize.y / 2 + 80),
-      priority: 102,
-    );
-    _msgComponent = msg;
-    add(msg);
+    if (_msgComponent == null) {
+      _msgComponent = TextBoxComponent<TextPaint>(
+        text: text,
+        textRenderer: TextPaint(
+          style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
+        ),
+        boxConfig: TextBoxConfig(maxWidth: panelSize.x - 80, timePerChar: 0),
+        anchor: Anchor.topCenter,
+        position: msgPosition,
+        priority: 102,
+      );
+      add(_msgComponent!);
+    } else {
+      if (_msgComponent!.text != text) {
+        _msgComponent!.text = text;
+      }
+      _msgComponent!.position = msgPosition;
+    }
     _pendingLayoutSize = null;
     _pendingMessage = '';
   }

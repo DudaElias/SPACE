@@ -262,6 +262,7 @@ class ControlPanelWorld extends World {
     _victoryDialogOpen = false;
     _activeDialog?.removeFromParent();
     _activeDialog = null;
+    _lastLayoutSize = null;
     _awaitingIntroDelay = true;
     _introDelay = 0.75;
   }
@@ -275,14 +276,21 @@ class ControlPanelWorld extends World {
     _victoryDialogOpen = false;
     _activeDialog?.removeFromParent();
     _activeDialog = null;
+    _lastLayoutSize = null;
     _setStatus(_statusWinClosed);
   }
+
+  Vector2? _lastLayoutSize;
 
   @override
   void update(double dt) {
     super.update(dt);
     if (_activeDialog != null) {
-      _activeDialog!.layoutForSize(findGame()!.size);
+      final size = findGame()!.size;
+      if (_lastLayoutSize != size) {
+        _lastLayoutSize = size;
+        _activeDialog!.layoutForSize(size);
+      }
     }
     if (_tutorialOverlay != null) {
       _updateTutorial(dt);
@@ -593,6 +601,7 @@ class ControlPanelWorld extends World {
   void _showDialog(GameModal dialog) {
     _activeDialog?.removeFromParent();
     _activeDialog = dialog;
+    _lastLayoutSize = null;
     add(dialog);
     dialog.layoutForSize(findGame()!.size);
   }
@@ -639,12 +648,14 @@ class ControlPanelWorld extends World {
       onPressed: () {
         _activeDialog?.removeFromParent();
         _activeDialog = null;
+        _lastLayoutSize = null;
         _startGame();
       },
       secondaryButtonText: 'Ver Tutorial',
       onSecondaryPressed: () {
         _activeDialog?.removeFromParent();
         _activeDialog = null;
+        _lastLayoutSize = null;
         _consecutiveLosses = 0;
         _startTutorial();
       },
