@@ -128,11 +128,14 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
     required this.onPressed,
     required this.style,
     Vector2? size,
-  }) : super(size: size ?? Vector2(280, 48), anchor: Anchor.center) {
-    _labelText = TextComponent(
+  }) : super(size: size ?? Vector2(210, 48), anchor: Anchor.center) {
+    _labelComponent = TextBoxComponent(
       text: label,
       anchor: Anchor.center,
       position: this.size / 2,
+      size: Vector2(this.size.x - 16, this.size.y - 8),
+      boxConfig: const TextBoxConfig(timePerChar: 0, maxWidth: double.infinity),
+      align: Anchor.center,
       textRenderer: TextPaint(
         style: TextStyle(
           fontFamily: GoogleFonts.silkscreen().fontFamily,
@@ -148,17 +151,17 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
   final VoidCallback onPressed;
   final GameModalStyle style;
 
-  late final TextComponent _labelText;
+  late final TextBoxComponent _labelComponent;
   bool _pressed = false;
 
   void setLabel(String label) {
-    _labelText.text = label;
+    _labelComponent.text = label;
   }
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    add(_labelText);
+    add(_labelComponent);
   }
 
   @override
@@ -204,6 +207,8 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
         ..strokeWidth = 1.5
         ..color = style.buttonBorderColor.withAlpha(210),
     );
+
+    canvas.clipRRect(button);
   }
 
   @override

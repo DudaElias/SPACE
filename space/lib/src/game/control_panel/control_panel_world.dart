@@ -56,7 +56,7 @@ class ControlPanelWorld extends World {
 
   final ControlPanelController _controller;
   final ControlPanelMode mode;
-  final VoidCallback? onMiniGameFinishExit;
+  final void Function(int score)? onMiniGameFinishExit;
   final bool skipTutorial;
   int _consecutiveLosses = 0;
 
@@ -268,7 +268,7 @@ class ControlPanelWorld extends World {
 
   void _closeVictoryDialog() {
     if (onMiniGameFinishExit != null) {
-      onMiniGameFinishExit!.call();
+      onMiniGameFinishExit!(_controller.calculateScore());
       return;
     }
 
@@ -470,6 +470,7 @@ class ControlPanelWorld extends World {
     }
 
     if (_controller.phase == ControlPanelPhase.gameOver) {
+      _controller.onRestart();
       _startGame();
       return;
     }

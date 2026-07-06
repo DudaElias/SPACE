@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flame/camera.dart';
 import 'package:flame/components.dart';
 
@@ -19,7 +18,7 @@ class BrokenShipRoute extends Component with HasGameReference<SpaceGame> {
   });
 
   final BrokenShipMode mode;
-  final VoidCallback? onMiniGameFinishExit;
+  final void Function(int score)? onMiniGameFinishExit;
   final bool skipTutorial;
 
   late final BrokenShipWorld _world;

@@ -16,11 +16,15 @@ class ControlPanelController {
   ControlPanelPhase _phase = ControlPanelPhase.showingSequence;
   int _playerIndex = 0;
   int _score = 0;
+  int _restartCount = 0;
+  int _missPosition = 0;
 
   ControlPanelPhase get phase => _phase;
   int get score => _score;
   int get maxRounds => _maxRounds;
   int get playerProgress => _playerIndex;
+  int get restartCount => _restartCount;
+  int get missPosition => _missPosition;
   List<int> get sequence => List<int>.unmodifiable(_sequence);
 
   void Function()? onCorrect;
@@ -34,7 +38,13 @@ class ControlPanelController {
       ..add(_nextPad());
     _playerIndex = 0;
     _score = 0;
+    _restartCount = 0;
+    _missPosition = 0;
     _phase = ControlPanelPhase.showingSequence;
+  }
+
+  void onRestart() {
+    _restartCount += 1;
   }
 
   void beginPlayerTurn() {
@@ -60,6 +70,7 @@ class ControlPanelController {
     final int expected = _sequence[_playerIndex];
     if (padIndex != expected) {
       _phase = ControlPanelPhase.gameOver;
+      _missPosition = _playerIndex + 1;
       return ControlPanelInputResult.incorrect;
     }
 
@@ -76,6 +87,21 @@ class ControlPanelController {
     }
 
     return ControlPanelInputResult.correct;
+  }
+
+  int calculateScore() {
+    if (_restartCount == 0 && _phase == ControlPanelPhase.gameWon) {
+      return 100 * _maxRounds;
+    }
+
+    int points = 100 * _score;
+
+    if (_phase == ControlPanelPhase.gameOver && _sequence.isNotEmpty) {
+      points += ((_missPosition / _sequence.length) * 100).floor();
+    }
+
+    points -= _restartCount * 30;
+    return points.clamp(0, 10000);
   }
 
   int _nextPad() => _random.nextInt(4);

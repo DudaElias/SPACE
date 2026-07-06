@@ -18,7 +18,7 @@ enum AsteroidFieldMode { standalone, miniGame, story }
 class AsteroidField extends FlameGame
     with HasGameReference, HasCollisionDetection, DragCallbacks, TapCallbacks {
   final AsteroidFieldMode mode;
-  final VoidCallback? onMiniGameFinishExit;
+  final void Function(int score)? onMiniGameFinishExit;
   final VoidCallback? onBackPressed;
   final bool skipTutorial;
   final VoidCallback? onTutorialComplete;
@@ -48,6 +48,7 @@ class AsteroidField extends FlameGame
   double get petiscoSpawnRate => 1.6 * GameSettings.instance.spawnRateMultiplier;
 
   int petiscosCollected = 0;
+  int _restartCount = 0;
   AsteroidFieldPhase phase = AsteroidFieldPhase.waiting;
   double distanceTravelled = 0.0;
   double get finishDistance {
@@ -254,11 +255,16 @@ class AsteroidField extends FlameGame
 
   void onFinishContinue() {
     if (onMiniGameFinishExit != null) {
-      onMiniGameFinishExit!.call();
+      onMiniGameFinishExit!(_calculateScore());
       return;
     }
 
     resetToStart();
+  }
+
+  int _calculateScore() {
+    int points = petiscosCollected * 50 - _restartCount * 30;
+    return points.clamp(0, 10000);
   }
 
   void startGame() {
@@ -280,6 +286,7 @@ class AsteroidField extends FlameGame
     if (introModal.isMounted) {
       introModal.removeFromParent();
     }
+    _restartCount = 0;
     startGame();
   }
 
@@ -330,6 +337,7 @@ class AsteroidField extends FlameGame
     SoundManager.instance.playSfx('asteroid_hit');
     SoundManager.instance.stopBgm();
 
+    _restartCount += 1;
     phase = AsteroidFieldPhase.gameOver;
     removeAll(
       children

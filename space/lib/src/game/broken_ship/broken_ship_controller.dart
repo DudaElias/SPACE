@@ -54,6 +54,8 @@ class BrokenShipController {
   SortCriterion _currentCriterion = SortCriterion.shape;
   double _repairProgress = 0.0;
   int _comboCount = 0;
+  int _wrongCount = 0;
+  int _missCount = 0;
   int _objectsDealtWithInPhase = 0;
   int _objectsDealtWithInRule = 0;
   SortingPiece? _currentPiece;
@@ -93,6 +95,8 @@ class BrokenShipController {
   SortCriterion get currentCriterion => _currentCriterion;
   double get repairPercent => _repairProgress;
   int get comboCount => _comboCount;
+  int get wrongCount => _wrongCount;
+  int get missCount => _missCount;
 
   int get comboMultiplier {
     final level = 1 + (_comboCount ~/ 5);
@@ -197,6 +201,8 @@ class BrokenShipController {
     _currentCriterion = SortCriterion.shape;
     _repairProgress = 0.0;
     _comboCount = 0;
+    _wrongCount = 0;
+    _missCount = 0;
     _objectsDealtWithInPhase = 0;
     _objectsDealtWithInRule = 0;
     _currentPiece = null;
@@ -233,10 +239,12 @@ class BrokenShipController {
 
   void handleIncorrect() {
     _comboCount = 0;
+    _wrongCount += 1;
   }
 
   void handleMissed() {
     _comboCount = 0;
+    _missCount += 1;
   }
 
   void enterPause() {
@@ -285,6 +293,11 @@ class BrokenShipController {
       return true;
     }
     return false;
+  }
+
+  int calculateScore() {
+    int points = 1000 - (_wrongCount * 30) - (_missCount * 15);
+    return points.clamp(0, 10000);
   }
 
   BinSide _evaluatePiece(SortingPiece piece) {
