@@ -98,6 +98,7 @@ class GameModal extends PositionComponent {
     }
 
     final text = _pendingMessage.isNotEmpty ? _pendingMessage : message;
+    final msgPosition = Vector2(gameSize.x / 2, gameSize.y / 2 - panelSize.y / 2 + 80);
 
     _msgComponent?.removeFromParent();
     final renderer = TextPaint(
