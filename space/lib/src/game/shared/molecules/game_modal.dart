@@ -37,7 +37,7 @@ class GameModal extends PositionComponent {
   late TextComponent _titleText;
   late GameModalActionButton _button;
   GameModalActionButton? _secondaryButton;
-  TextBoxComponent<TextPaint>? _msgComponent;
+  ScrollTextBoxComponent<TextPaint>? _msgComponent;
   Vector2? _pendingLayoutSize;
   bool _uiReady = false;
   String _pendingMessage = '';
@@ -100,15 +100,23 @@ class GameModal extends PositionComponent {
     final text = _pendingMessage.isNotEmpty ? _pendingMessage : message;
 
     _msgComponent?.removeFromParent();
-    final msg = TextBoxComponent<TextPaint>(
+    final renderer = TextPaint(
+      style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
+    );
+    final msg = ScrollTextBoxComponent<TextPaint>(
+      size: Vector2(panelSize.x - 80, panelSize.y - 150),
       text: text,
-      textRenderer: TextPaint(
-        style: TextStyle(fontFamily: GoogleFonts.silkscreen().fontFamily, color: messageColor, fontSize: 18, height: 1.3),
-      ),
-      boxConfig: TextBoxConfig(maxWidth: panelSize.x - 80, timePerChar: 0),
+      textRenderer: renderer,
+      boxConfig: const TextBoxConfig(timePerChar: 0),
       anchor: Anchor.topCenter,
       position: Vector2(gameSize.x / 2, gameSize.y / 2 - panelSize.y / 2 + 80),
       priority: 102,
+      onComplete: () {
+        final clip = _msgComponent?.children.firstOrNull;
+        if (clip != null && clip.children.isNotEmpty) {
+          (clip.children.first as PositionComponent).position.y = 0;
+        }
+      },
     );
     _msgComponent = msg;
     add(msg);

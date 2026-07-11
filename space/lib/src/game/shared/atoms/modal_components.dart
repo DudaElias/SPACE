@@ -207,8 +207,6 @@ class GameModalActionButton extends PositionComponent with TapCallbacks {
         ..strokeWidth = 1.5
         ..color = style.buttonBorderColor.withAlpha(210),
     );
-
-    canvas.clipRRect(button);
   }
 
   @override
